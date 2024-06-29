@@ -32,6 +32,7 @@ public class GridManager : Singleton<GridManager>
 
         _gridPanel = new GameObject();
         _gridPanel.name = "GridPanel";
+        _gridPanel.transform.position = new Vector3(-_size * _offset.x * 0.5f, _size * _offset.y * 0.5f, 0);
 
         _prefabs.Add("Prefabs/banana");
         _prefabs.Add("Prefabs/blueberry");
@@ -48,8 +49,6 @@ public class GridManager : Singleton<GridManager>
         int[,] data;
 
         data = GenerateGrid();
-
-        // Debug.Log(data);
 
         do
         {
@@ -104,7 +103,6 @@ public class GridManager : Singleton<GridManager>
                     {
                         _moving = false;
                         Release();
-                        Debug.Log("匹配结束");
                     });
                 });
             }
@@ -182,7 +180,7 @@ public class GridManager : Singleton<GridManager>
         {
             for (int j = 0; j < _size; j++)
             {
-                GameObject obj = ObjManager.Ins().GetRes(_prefabs[data[j, i]]);
+                GameObject obj = ObjManager.Ins().GetRes(_prefabs[data[i, j]]);
 
                 obj.transform.parent = _gridPanel.transform;
 
@@ -190,10 +188,10 @@ public class GridManager : Singleton<GridManager>
 
                 gs.x = j;
                 gs.y = i;
-                gs.gridType = data[j, i];
+                gs.gridType = data[i, j];
                 gs.pos = new Vector3(_offset.x * j, -_offset.y * i, 0);
 
-                _grid[j, i] = gs;
+                _grid[gs.y, gs.x] = gs;
             }
         }
     }
@@ -211,10 +209,13 @@ public class GridManager : Singleton<GridManager>
 
         foreach (var grid in grids)
         {
-            int type = grid.gridType;
-            ObjManager.Ins().Recycle(_prefabs[type], grid.gameObject);
+            if (_grid[grid.y, grid.x] != null)
+            {
+                int type = grid.gridType;
+                ObjManager.Ins().Recycle(_prefabs[type], grid.gameObject);
 
-            _grid[grid.x, grid.y] = null;
+                _grid[grid.y, grid.x] = null;
+            }
         }
     }
 
@@ -225,8 +226,8 @@ public class GridManager : Singleton<GridManager>
     /// <param name="end"></param>
     private void Swap(GridScript start, GridScript end, Action callback)
     {
-        _grid[start.x, start.y] = end;
-        _grid[end.x, end.y] = start;
+        _grid[start.y, start.x] = end;
+        _grid[end.y, end.x] = start;
 
         int x = start.x;
         int y = start.y;
@@ -264,7 +265,7 @@ public class GridManager : Singleton<GridManager>
         GridScript cur;
         while (x < _size)
         {
-            cur = _grid[x, grid.y];
+            cur = _grid[grid.y, x];
 
             if (cur == null || cur.gridType != grid.gridType)
             {
@@ -282,7 +283,7 @@ public class GridManager : Singleton<GridManager>
         x = grid.x - 1;
         while (x >= 0)
         {
-            cur = _grid[x, grid.y];
+            cur = _grid[grid.y, x];
 
             if (cur == null || cur.gridType != grid.gridType)
             {
@@ -308,7 +309,7 @@ public class GridManager : Singleton<GridManager>
 
         while (y < _size)
         {
-            cur = _grid[grid.x, y];
+            cur = _grid[y, grid.x];
 
             if (cur == null || cur.gridType != grid.gridType)
             {
@@ -326,7 +327,7 @@ public class GridManager : Singleton<GridManager>
         y = grid.y - 1;
         while (y >= 0)
         {
-            cur = _grid[grid.x, y];
+            cur = _grid[y, grid.x];
 
             if (cur == null || cur.gridType != grid.gridType)
             {
@@ -393,8 +394,8 @@ public class GridManager : Singleton<GridManager>
         }
         else
         {
+            TimerUtils.Once(100, ReGenerate);
             //匹配的情况 
-            ReGenerate();
         }
     }
 
@@ -410,7 +411,7 @@ public class GridManager : Singleton<GridManager>
         {
             for (int j = _size - 1; j >= 0; j--)
             {
-                GridScript gs = _grid[j, i];
+                GridScript gs = _grid[i, j];
                 if (gs == null)
                 {
                     int y = i - 1;
@@ -418,7 +419,7 @@ public class GridManager : Singleton<GridManager>
                     GridScript temp = null;
                     while (y >= 0)
                     {
-                        temp = _grid[j, y];
+                        temp = _grid[y, j];
                         if (temp != null)
                         {
                             break;
@@ -443,7 +444,7 @@ public class GridManager : Singleton<GridManager>
                         temp.gridType = type;
                         temp.pos = new Vector3(_offset.x * j, _offset.y * ++offsetY[j], 0);
 
-                        _grid[j, i] = temp;
+                        _grid[i, j] = temp;
 
                         PosTweenUtils.Move(temp, temp.pos, new Vector3(temp.pos.x, -_offset.y * temp.y, 0),
                             duration);
@@ -452,12 +453,13 @@ public class GridManager : Singleton<GridManager>
                     {
                         if (temp.enabled)
                         {
-                            _grid[temp.x, temp.y] = null;
+                            _grid[temp.y, temp.x] = null;
+
                             //直接下落
                             temp.x = j;
                             temp.y = i;
 
-                            _grid[j, i] = temp;
+                            _grid[i, j] = temp;
 
                             PosTweenUtils.Move(temp, temp.pos, new Vector3(temp.pos.x, -_offset.y * temp.y, 0),
                                 duration);
@@ -519,11 +521,11 @@ public class GridManager : Singleton<GridManager>
                                 //TODO 左右都为null
                             }
 
-                            _grid[temp.x, temp.y] = null;
+                            _grid[temp.y, temp.x] = null;
 
                             temp.x = j;
                             temp.y = i;
-                            _grid[j, i] = temp;
+                            _grid[i, j] = temp;
 
                             PosTweenUtils.Move(temp, temp.pos, new Vector3(temp.pos.x, -_offset.y * temp.y, 0),
                                 225, 0,
@@ -539,10 +541,10 @@ public class GridManager : Singleton<GridManager>
         }
 
         //检测匹配
-        TimerUtils.Once(310, () =>
+        TimerUtils.Once(350, () =>
         {
             GridScript[] grids = new GridScript[_grid.Length];
-        
+
             int index = 0;
             foreach (var grid in _grid)
             {
@@ -554,7 +556,6 @@ public class GridManager : Singleton<GridManager>
             {
                 _moving = false;
                 Release();
-                Debug.Log("匹配结束");
             });
         });
     }

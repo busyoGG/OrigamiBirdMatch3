@@ -47,7 +47,7 @@ namespace PoolUtils
             stack?.TryPop(out obj);
 
             _releaseFlags[name] = ReleaseFlag.New;
-
+            
             return obj;
         }
 
@@ -66,6 +66,11 @@ namespace PoolUtils
             {
                 stack = new Stack<GameObject>();
                 _pool[name] = stack;
+            }
+
+            if (stack.Contains(obj))
+            {
+                Debug.LogWarning("重复回收");
             }
 
             stack.Push(obj);
