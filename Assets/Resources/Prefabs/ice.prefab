@@ -100,3 +100,4 @@ MonoBehaviour:
   x: 0
   y: 0
   gridType: 0
+  blockType: 1

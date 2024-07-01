@@ -1,5 +1,7 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using EventUtils;
 using GameObjectUtils;
 using PosTween;
 using Timer;
@@ -9,6 +11,8 @@ using Random = System.Random;
 
 public class GridManager : Singleton<GridManager>
 {
+    private int _id;
+
     private GridScript[,] _grid;
 
     private int _size;
@@ -75,7 +79,7 @@ public class GridManager : Singleton<GridManager>
     /// 生成三消布局
     /// </summary>
     /// <returns></returns>
-    public int[,] GenerateGrid()
+    private int[,] GenerateGrid()
     {
         var grid = new int[_size, _size];
         for (int i = 0; i < _size; i++)
@@ -130,6 +134,11 @@ public class GridManager : Singleton<GridManager>
     public void Release()
     {
         _cur = null;
+    }
+
+    public void Remove(GridScript grid)
+    {
+        Delete(new List<GridScript>() { grid });
     }
 
     /// <summary>
@@ -193,20 +202,7 @@ public class GridManager : Singleton<GridManager>
         {
             for (int j = 0; j < _size; j++)
             {
-                GameObject obj = ObjManager.Ins().GetRes(_prefabs[data[i, j]]);
-
-                obj.transform.parent = _gridPanel.transform;
-
-                GridScript gs = obj.GetComponent<GridScript>();
-
-                gs.x = j;
-                gs.y = i;
-                gs.gridType = data[i, j];
-                gs.pos = new Vector3(_offset.x * j, -_offset.y * i, 0);
-
-                gs.enabled = !_blockDic.ContainsKey(_prefabs[data[i, j]]);
-
-                _grid[gs.y, gs.x] = gs;
+                CreateGrid(data[i, j], i, j, new Vector3(_offset.x * j, -_offset.y * i, 0));
             }
         }
     }
@@ -214,10 +210,7 @@ public class GridManager : Singleton<GridManager>
     /// <summary>
     /// 删除匹配项
     /// </summary>
-    /// <param name="start"></param>
-    /// <param name="end"></param>
-    /// <param name="baseLine"></param>
-    /// <param name="vertical"></param>
+    /// <param name="grids"></param>
     private void Delete(List<GridScript> grids)
     {
         //TODO 无法一次消除的情况
@@ -230,6 +223,9 @@ public class GridManager : Singleton<GridManager>
                 ObjManager.Ins().Recycle(_prefabs[type], grid.gameObject);
 
                 _grid[grid.y, grid.x] = null;
+
+                grid.OnRemove();
+                grid.UnRegister();
             }
         }
     }
@@ -414,6 +410,40 @@ public class GridManager : Singleton<GridManager>
         }
     }
 
+    /// <summary>
+    /// 获取grid
+    /// </summary>
+    /// <param name="gridType"></param>
+    /// <param name="i"></param>
+    /// <param name="j"></param>
+    /// <param name="pos"></param>
+    /// <returns></returns>
+    private GridScript CreateGrid(int gridType, int i, int j, Vector3 pos)
+    {
+        GameObject obj = ObjManager.Ins().GetRes(_prefabs[gridType]);
+
+        obj.transform.parent = _gridPanel.transform;
+
+        GridScript gs = obj.GetComponent<GridScript>();
+
+        if (gs.id.Equals(string.Empty))
+        {
+            gs.id = _id++.ToString();
+        }
+
+        gs.x = j;
+        gs.y = i;
+        gs.gridType = gridType;
+        gs.pos = pos;
+
+        gs.enabled = !_blockDic.ContainsKey(_prefabs[gridType]);
+        gs.Register();
+
+        _grid[gs.y, gs.x] = gs;
+
+        return gs;
+    }
+
     private void ReGenerate()
     {
         //先移动 后生成
@@ -453,18 +483,7 @@ public class GridManager : Singleton<GridManager>
                             type = _random.Next(_prefabs.Count);
                         }
 
-                        GameObject obj = ObjManager.Ins().GetRes(_prefabs[type]);
-
-                        obj.transform.parent = _gridPanel.transform;
-
-                        temp = obj.GetComponent<GridScript>();
-
-                        temp.x = j;
-                        temp.y = i;
-                        temp.gridType = type;
-                        temp.pos = new Vector3(_offset.x * j, _offset.y * ++offsetY[j], 0);
-
-                        _grid[i, j] = temp;
+                        temp = CreateGrid(type, i, j, new Vector3(_offset.x * j, _offset.y * ++offsetY[j], 0));
 
                         PosTweenUtils.Move(temp, temp.pos, new Vector3(temp.pos.x, -_offset.y * temp.y, 0),
                             duration);
@@ -631,16 +650,7 @@ public class GridManager : Singleton<GridManager>
                     type = _random.Next(_prefabs.Count);
                 }
 
-                GameObject obj = ObjManager.Ins().GetRes(_prefabs[type]);
-
-                obj.transform.parent = _gridPanel.transform;
-
-                temp = obj.GetComponent<GridScript>();
-
-                temp.x = x + isLeft;
-                temp.y = y;
-                temp.gridType = type;
-                temp.pos = new Vector3(_offset.x * temp.x, _offset.y * ++offsetY[temp.x], 0);
+                CreateGrid(type, y, x + isLeft, new Vector3(_offset.x * temp.x, _offset.y * ++offsetY[temp.x], 0));
             }
             else
             {
