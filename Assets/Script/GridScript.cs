@@ -2,9 +2,20 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using EventUtils;
+using GameObjectUtils;
 using Timer;
 using UnityEngine;
 using UnityEngine.EventSystems;
+
+public enum EffectType
+{
+    None,
+    BombH,
+    BombV,
+    BombRect,
+    Clear,
+    Bonus
+}
 
 public class GridScript : MonoBehaviour
 {
@@ -15,7 +26,7 @@ public class GridScript : MonoBehaviour
     }
 
     public string id;
-    
+
     public int x;
 
     public int y;
@@ -24,15 +35,11 @@ public class GridScript : MonoBehaviour
 
     public BlockType blockType;
 
+    public EffectType effect;
+
     public Vector3 pos
     {
         get => transform.localPosition;
-        // set
-        // {
-        //     Vector3 temp = value;
-        //     temp.y = -temp.y;
-        //     transform.position = temp;
-        // }
         set => transform.localPosition = value;
     }
 
@@ -50,12 +57,35 @@ public class GridScript : MonoBehaviour
     {
         gameObject.GetComponent<SpriteRenderer>().sortingOrder = 0;
     }
-    
+
+    public void SetEffect(EffectType eff)
+    {
+        effect = eff;
+        GameObject obj = null;
+        switch (eff)
+        {
+            case EffectType.BombH:
+                obj = ObjManager.Ins().GetRes("Prefabs/horizontal");
+                obj.name = "Prefabs/horizontal";
+                break;
+            case EffectType.BombV:
+                obj = ObjManager.Ins().GetRes("Prefabs/vertical");
+                obj.name = "Prefabs/vertical";
+                break;
+        }
+
+        if (obj != null)
+        {
+            obj.transform.parent = transform;
+            obj.transform.localPosition = Vector3.zero;
+        }
+    }
+
     public void Register()
     {
         if (blockType == BlockType.Ice)
         {
-            EventManager.AddListening(id,"Ice_Break", arr =>
+            EventManager.AddListening(id, "Ice_Break", arr =>
             {
                 GridScript removedOne = arr[0] as GridScript;
                 if (Math.Abs(x - removedOne.x) <= 1 && Math.Abs(y - removedOne.y) <= 1)
@@ -70,19 +100,22 @@ public class GridScript : MonoBehaviour
     public void UnRegister()
     {
         //加延迟 防止foreach报错
-        TimerUtils.Once(100, () =>
-        {
-            Debug.Log("取消注册");
-            EventManager.RemoveAll(id);
-        });
+        TimerUtils.Once(100, () => { EventManager.RemoveAll(id); });
     }
 
     public void OnRemove()
     {
         if (blockType == BlockType.Fruit)
         {
-            Debug.Log("触发特殊事件");
             EventManager.TriggerEvent("Ice_Break", new ArrayList() { this });
+        }
+
+        GridManager.Ins().DoEffect(this);
+
+        if (transform.childCount > 0)
+        {
+            var child = transform.GetChild(0).gameObject;
+            ObjManager.Ins().Recycle(child.name, child);
         }
     }
 
