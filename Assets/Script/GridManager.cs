@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using GameObjectUtils;
 using PosTween;
 using Timer;
+using TMPro;
 using UnityEngine;
 using Random = System.Random;
 
@@ -15,6 +16,10 @@ public class GridManager : Singleton<GridManager>
     private Random _random;
 
     private List<string> _prefabs = new List<string>();
+
+    private List<string> _other = new List<string>();
+
+    private Dictionary<string, bool> _blockDic = new Dictionary<string, bool>();
 
     private GameObject _gridPanel;
 
@@ -34,11 +39,19 @@ public class GridManager : Singleton<GridManager>
         _gridPanel.name = "GridPanel";
         _gridPanel.transform.position = new Vector3(-_size * _offset.x * 0.5f, _size * _offset.y * 0.5f, 0);
 
+        //添加基础水果
         _prefabs.Add("Prefabs/banana");
         _prefabs.Add("Prefabs/blueberry");
         _prefabs.Add("Prefabs/peach");
         _prefabs.Add("Prefabs/strawberry");
         _prefabs.Add("Prefabs/kiwi");
+        _prefabs.Add("Prefabs/ice");
+
+        //添加额外效果
+        // _other.Add("Prefabs/ice");
+
+        //初始化属性
+        _blockDic.Add("Prefabs/ice", true);
     }
 
     /// <summary>
@@ -88,7 +101,7 @@ public class GridManager : Singleton<GridManager>
 
     public void SetHover(GridScript gs)
     {
-        if (_cur != null && _cur != gs && !_moving)
+        if (_cur != null && _cur != gs && !_moving && Math.Abs(_cur.x - gs.x) <= 1 && Math.Abs(_cur.y - gs.y) <= 1)
         {
             _moving = true;
 
@@ -191,6 +204,8 @@ public class GridManager : Singleton<GridManager>
                 gs.gridType = data[i, j];
                 gs.pos = new Vector3(_offset.x * j, -_offset.y * i, 0);
 
+                gs.enabled = !_blockDic.ContainsKey(_prefabs[data[i, j]]);
+
                 _grid[gs.y, gs.x] = gs;
             }
         }
@@ -242,7 +257,7 @@ public class GridManager : Singleton<GridManager>
 
         Action callback1 = () =>
         {
-            start.ResetFront();
+            start.Reset();
             callback?.Invoke();
         };
 
@@ -401,7 +416,7 @@ public class GridManager : Singleton<GridManager>
 
     private void ReGenerate()
     {
-        //TODO 先移动 后生成
+        //先移动 后生成
 
         int[] offsetY = new int[_size];
 
@@ -431,7 +446,12 @@ public class GridManager : Singleton<GridManager>
 
                     if (temp == null)
                     {
+                        //创建可移动grid
                         int type = _random.Next(_prefabs.Count);
+                        while (_blockDic.ContainsKey(_prefabs[type]))
+                        {
+                            type = _random.Next(_prefabs.Count);
+                        }
 
                         GameObject obj = ObjManager.Ins().GetRes(_prefabs[type]);
 
@@ -467,72 +487,47 @@ public class GridManager : Singleton<GridManager>
                         else
                         {
                             //检查左右
-                            int left = temp.x - 1;
-                            int right = temp.x + 1;
+                            int defX = temp.x;
+                            int defY = temp.y;
 
-                            GridScript tempL = null;
-                            while (left >= 0)
+                            int isLeft = new Random().Next() == 0 ? -1 : 1;
+                            temp = GenerateForBlockedGrid(temp, isLeft, offsetY);
+
+                            if (temp.y >= 0)
                             {
-                                tempL = _grid[left, temp.y];
-                                if (tempL != null && tempL.enabled)
-                                {
-                                    break;
-                                }
+                                _grid[temp.y, temp.x] = null;
                             }
 
-                            GridScript tempR = null;
-                            while (right < _size)
-                            {
-                                tempR = _grid[left, temp.y];
-                                if (tempR != null && tempR.enabled)
-                                {
-                                    break;
-                                }
-                            }
+                            //移动三步走
+                            int moveY = defY - temp.y;
+                            int moveX = temp.x - defX;
 
-                            int dis = 0;
-                            if (tempL != null && tempR != null)
-                            {
-                                int disLeft = temp.x - tempL.x;
-                                int disRight = tempR.x - temp.x;
-                                if (disLeft > disRight)
-                                {
-                                    temp = tempL;
-                                    dis = disLeft;
-                                }
-                                else
-                                {
-                                    temp = tempR;
-                                    dis = disRight;
-                                }
-                            }
-                            else if (tempL == null)
-                            {
-                                dis = tempR.x - temp.x;
-                                temp = tempR;
-                            }
-                            else if (tempR == null)
-                            {
-                                dis = temp.x - tempL.x;
-                                temp = tempL;
-                            }
-                            else
-                            {
-                                //TODO 左右都为null
-                            }
-
-                            _grid[temp.y, temp.x] = null;
+                            defY = temp.y;
+                            defX = temp.x;
 
                             temp.x = j;
                             temp.y = i;
                             _grid[i, j] = temp;
 
-                            PosTweenUtils.Move(temp, temp.pos, new Vector3(temp.pos.x, -_offset.y * temp.y, 0),
-                                225, 0,
-                                () =>
+                            float dis = Math.Abs(temp.x - defX) + temp.y - defY;
+
+                            int step1 = (int)(300 * (moveY / dis));
+                            int step2 = (int)(300 * (2 / dis));
+                            int step3 = (int)(300 * ((dis - moveY - 2) / dis));
+
+                            PosTweenUtils.Move(temp, temp.pos,
+                                new Vector3(temp.pos.x, temp.pos.y - _offset.y * moveY, 0),
+                                step1, 0, () =>
                                 {
                                     PosTweenUtils.Move(temp, temp.pos,
-                                        new Vector3(temp.pos.x - (_offset.x * dis), temp.pos.y, 0), 75);
+                                        new Vector3(temp.pos.x - _offset.x * (moveX > 0 ? 1 : -1),
+                                            temp.pos.y - _offset.y, 0),
+                                        step2, 0, () =>
+                                        {
+                                            PosTweenUtils.Move(temp, temp.pos,
+                                                new Vector3(_offset.x * temp.x, -_offset.y * temp.y, 0),
+                                                step3);
+                                        });
                                 });
                         }
                     }
@@ -558,5 +553,102 @@ public class GridManager : Singleton<GridManager>
                 Release();
             });
         });
+    }
+
+    private GridScript GenerateForBlockedGrid(GridScript temp, int lr, int[] offsetY)
+    {
+        //检查左右
+
+        GridScript tempL = null;
+        GridScript tempR = null;
+
+        switch (lr)
+        {
+            case -1:
+                int left = temp.x - 1;
+                while (left >= 0)
+                {
+                    tempL = _grid[temp.y, left];
+                    if (tempL == null || tempL.enabled)
+                    {
+                        break;
+                    }
+
+                    left--;
+                }
+
+                break;
+            case 1:
+                int right = temp.x + 1;
+                while (right < _size)
+                {
+                    tempR = _grid[temp.y, right];
+                    if (tempR == null || tempR.enabled)
+                    {
+                        break;
+                    }
+
+                    right++;
+                }
+
+                break;
+        }
+
+
+        if (tempL == null && tempR != null)
+        {
+            // dis = tempR.x - temp.x;
+            temp = tempR;
+        }
+        else if (tempR == null && tempL != null)
+        {
+            // dis = temp.x - tempL.x;
+            temp = tempL;
+        }
+        else
+        {
+            //左右都为null
+            int isLeft = new Random().Next() == 0 ? -1 : 1;
+            int y = temp.y - 1;
+            int x = temp.x;
+            while (y >= 0)
+            {
+                temp = _grid[y, x];
+                if (temp != null)
+                {
+                    break;
+                }
+
+                y--;
+            }
+
+            if (y < 0)
+            {
+                //创建可移动grid
+                int type = _random.Next(_prefabs.Count);
+                while (_blockDic.ContainsKey(_prefabs[type]))
+                {
+                    type = _random.Next(_prefabs.Count);
+                }
+
+                GameObject obj = ObjManager.Ins().GetRes(_prefabs[type]);
+
+                obj.transform.parent = _gridPanel.transform;
+
+                temp = obj.GetComponent<GridScript>();
+
+                temp.x = x + isLeft;
+                temp.y = y;
+                temp.gridType = type;
+                temp.pos = new Vector3(_offset.x * temp.x, _offset.y * ++offsetY[temp.x], 0);
+            }
+            else
+            {
+                temp = GenerateForBlockedGrid(temp, isLeft, offsetY);
+            }
+        }
+
+        // Debug.Log("斜角 ==> " + temp.x + " " + temp.y);
+        return temp;
     }
 }

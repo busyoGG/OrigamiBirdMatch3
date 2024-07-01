@@ -38,23 +38,47 @@ SpriteAtlas:
     cachedData: {fileID: 0}
     packedSpriteRenderDataKeys:
     - f05bdb920dd9d134fb567d350e87889e: 21300000
+    - 64cd39e25439e324d9b9903a6705cb35: 21300000
+    - 2e6ad1e3a46850a46b22166f1a10bcd1: 21300000
+    - 2245f3178d4de4d4592f1d9c18b85018: 21300000
+    - 46682fd706b1c27468f1b41e13ac84b1: 21300000
     - 26f41f1974cad1e4480644fc783c5b05: 21300000
     - 83bbe86952ade8a409c018d3b8806031: 21300000
     - c3953fd970304274f9f1aea7b6774ead: 21300000
     - b816f4e984e0b754683f517720b827b0: 21300000
+    - 2243f26a1d3590a4e9557ed347b76ae4: 21300000
+    - a116728b10fd1e14bb97c8e6fda383da: 21300000
+    - ce65975f756617c479dbb66b2e6427ef: 21300000
+    - 7b2943cff61a0b044b9db80e06a52d6c: 21300000
   m_MasterAtlas: {fileID: 0}
   m_PackedSprites:
   - {fileID: 21300000, guid: f05bdb920dd9d134fb567d350e87889e, type: 3}
+  - {fileID: 21300000, guid: 64cd39e25439e324d9b9903a6705cb35, type: 3}
+  - {fileID: 21300000, guid: 2e6ad1e3a46850a46b22166f1a10bcd1, type: 3}
+  - {fileID: 21300000, guid: 2245f3178d4de4d4592f1d9c18b85018, type: 3}
+  - {fileID: 21300000, guid: 46682fd706b1c27468f1b41e13ac84b1, type: 3}
   - {fileID: 21300000, guid: 26f41f1974cad1e4480644fc783c5b05, type: 3}
   - {fileID: 21300000, guid: 83bbe86952ade8a409c018d3b8806031, type: 3}
   - {fileID: 21300000, guid: c3953fd970304274f9f1aea7b6774ead, type: 3}
   - {fileID: 21300000, guid: b816f4e984e0b754683f517720b827b0, type: 3}
+  - {fileID: 21300000, guid: 2243f26a1d3590a4e9557ed347b76ae4, type: 3}
+  - {fileID: 21300000, guid: a116728b10fd1e14bb97c8e6fda383da, type: 3}
+  - {fileID: 21300000, guid: ce65975f756617c479dbb66b2e6427ef, type: 3}
+  - {fileID: 21300000, guid: 7b2943cff61a0b044b9db80e06a52d6c, type: 3}
   m_PackedSpriteNamesToIndex:
   - kiwi
+  - bonus
+  - vertical
+  - clear
+  - chestLock
   - strawberry
   - blueberry
   - peach
   - banana
+  - horizontal
+  - bomb
+  - ice
+  - chestUnlock
   m_RenderDataMap: {}
   m_Tag: fruit
   m_IsVariant: 0

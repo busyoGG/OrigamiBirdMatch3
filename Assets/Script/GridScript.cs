@@ -29,7 +29,12 @@ public class GridScript : MonoBehaviour
         gameObject.GetComponent<SpriteRenderer>().sortingOrder = 1;
     }
 
-    public void ResetFront()
+    public void SetBack()
+    {
+        gameObject.GetComponent<SpriteRenderer>().sortingOrder = -1;
+    }
+
+    public void Reset()
     {
         gameObject.GetComponent<SpriteRenderer>().sortingOrder = 0;
     }
