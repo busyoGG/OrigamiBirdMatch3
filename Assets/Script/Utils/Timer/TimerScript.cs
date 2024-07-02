@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -8,7 +9,7 @@ namespace Timer
     {
         private Queue<(int, Action)> _actions = new Queue<(int, Action)>();
 
-        private Dictionary<int, bool> _register = new Dictionary<int, bool>();
+        private ConcurrentDictionary<int, bool> _register = new ConcurrentDictionary<int, bool>();
 
         void Update()
         {
@@ -16,7 +17,8 @@ namespace Timer
             {
                 (int, Action) item = _actions.Dequeue();
                 Run(item.Item2);
-                _register.Remove(item.Item1);
+                // _register.Remove(item.Item1);
+                _register.TryRemove(item.Item1, out var res);
             }
         }
 
@@ -25,7 +27,7 @@ namespace Timer
             if (!_register.ContainsKey(id))
             {
                 _actions.Enqueue((id, action));
-                _register.Add(id, true);
+                _register.TryAdd(id, true);
             }
         }
 

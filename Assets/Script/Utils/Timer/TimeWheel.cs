@@ -232,7 +232,10 @@ namespace Timer
 
         private void AddTask(TimerTask task)
         {
-            _month[task.dateTime.Month].AddLast(task);
+            lock (_lock)
+            {
+                _month[task.dateTime.Month].AddLast(task);
+            }
         }
 
         private bool RemoveTask(Dictionary<int, LinkedList<TimerTask>> wheel, int id, bool isAll = false)

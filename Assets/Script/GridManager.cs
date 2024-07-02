@@ -109,42 +109,20 @@ public class GridManager : Singleton<GridManager>
 
             GridScript[] grids = { _cur, gs };
 
-            //特殊情况
-            if (_cur.effect != EffectType.None && gs.effect != EffectType.None)
+            void Callback()
             {
-                void Callback()
+                DoMatchSpecial(grids, () =>
                 {
-                    DoMatchSpecial(grids);
-                }
-
-                Swap(_cur, gs, Callback);
-            }
-            else if (_cur.effect == EffectType.Clear || gs.effect == EffectType.Clear)
-            {
-                void Callback()
-                {
-                    DoMatchClear(grids);
-                }
-
-                Swap(_cur, gs, Callback);
-            }
-            else
-            {
-                void Callback()
-                {
-                    DoMatchNormal(grids, () =>
+                    _moving = true;
+                    Swap(grids[0], grids[1], () =>
                     {
-                        _moving = true;
-                        Swap(grids[0], grids[1], () =>
-                        {
-                            _moving = false;
-                            Release();
-                        });
+                        _moving = false;
+                        Release();
                     });
-                }
-
-                Swap(_cur, gs, Callback);
+                });
             }
+
+            Swap(_cur, gs, Callback);
         }
     }
 
@@ -168,21 +146,6 @@ public class GridManager : Singleton<GridManager>
 
         switch (grid.effect)
         {
-            // case EffectType.Clear:
-
-            // int index = 0;
-            // foreach (var g in _grid)
-            // {
-            //     if (g.blockType == GridScript.BlockType.Fruit)
-            //     {
-            //         clearList.Add(g);
-            //     }
-            //     index++;
-            // }
-            //
-            // Delete();
-
-            // break;
             case EffectType.BombH:
                 int left = grid.x - 1;
                 int right = grid.x + 1;
@@ -214,6 +177,57 @@ public class GridManager : Singleton<GridManager>
             case EffectType.BombV:
                 int up = grid.y - 1;
                 int down = grid.y + 1;
+                while (up >= 0)
+                {
+                    temp = _grid[up, grid.x];
+                    if (temp != null && temp.blockType == GridScript.BlockType.Fruit && temp.gridType != 0)
+                    {
+                        clearList.Add(temp);
+                    }
+
+                    up--;
+                }
+
+                while (down < _size)
+                {
+                    temp = _grid[down, grid.x];
+                    if (temp != null && temp.blockType == GridScript.BlockType.Fruit && temp.gridType != 0)
+                    {
+                        clearList.Add(temp);
+                    }
+
+                    down++;
+                }
+
+                Delete(clearList);
+                break;
+            case EffectType.BombCross:
+                left = grid.x - 1;
+                right = grid.x + 1;
+                while (left >= 0)
+                {
+                    temp = _grid[grid.y, left];
+                    if (temp != null && temp.blockType == GridScript.BlockType.Fruit && temp.gridType != 0)
+                    {
+                        clearList.Add(temp);
+                    }
+
+                    left--;
+                }
+
+                while (right < _size)
+                {
+                    temp = _grid[grid.y, right];
+                    if (temp != null && temp.blockType == GridScript.BlockType.Fruit && temp.gridType != 0)
+                    {
+                        clearList.Add(temp);
+                    }
+
+                    right++;
+                }
+
+                up = grid.y - 1;
+                down = grid.y + 1;
                 while (up >= 0)
                 {
                     temp = _grid[up, grid.x];
@@ -489,6 +503,7 @@ public class GridManager : Singleton<GridManager>
 
                 if (match.Count >= 5)
                 {
+                    Debug.Log("合成清屏炸弹");
                     newOne = CreateGrid(0, matchStart.y, matchStart.x,
                         new Vector3(_offset.x * matchStart.x, -_offset.y * matchStart.y, 0));
                     newOne.SetEffect(EffectType.Clear);
@@ -530,38 +545,24 @@ public class GridManager : Singleton<GridManager>
         }
     }
 
-    private void DoMatchClear(GridScript[] grids)
+    private void DoMatchSpecial(GridScript[] grids, Action callback = null)
     {
+        var start = grids[0];
+        var end = grids[1];
         List<GridScript> clearList = new();
-        foreach (var grid in _grid)
+
+        if (start.effect != EffectType.Clear && end.effect == EffectType.Clear)
         {
-            if (grid != null)
-            {
-                if (grids[0].effect == EffectType.Clear && grid.gridType == grids[1].gridType)
-                {
-                    clearList.Add(grid);
-                }
-                else if (grids[1].effect == EffectType.Clear && grid.gridType == grids[0].gridType)
-                {
-                    clearList.Add(grid);
-                }
-            }
+            (start, end) = (end, start);
         }
 
-        Delete(clearList);
-        TimerUtils.Once(200, ReGenerate);
-    }
-
-    private void DoMatchSpecial(GridScript[] grids)
-    {
-        foreach (var grid in grids)
+        switch (start.effect)
         {
-            List<GridScript> clearList = new();
-            GridScript temp;
-
-            switch (grid.effect)
-            {
-                case EffectType.Clear:
+            case EffectType.Clear:
+                clearList.Add(start);
+                if (end.effect == EffectType.Clear)
+                {
+                    //清屏
                     foreach (var g in _grid)
                     {
                         if (g != null)
@@ -573,64 +574,61 @@ public class GridManager : Singleton<GridManager>
                         }
                     }
 
-                    Delete(clearList);
-                    break;
-                case EffectType.BombH:
-                    int left = grid.x - 1;
-                    int right = grid.x + 1;
-                    while (left >= 0)
+                    clearList.Add(end);
+                }
+                else if (end.effect != EffectType.None)
+                {
+                    //所有同类水果都变换同类型炸弹
+                    foreach (var g in _grid)
                     {
-                        temp = _grid[grid.y, left];
-                        if (temp != null && temp.blockType == GridScript.BlockType.Fruit && temp.gridType != 0)
+                        if (g != null)
                         {
-                            clearList.Add(temp);
+                            if (g.blockType == GridScript.BlockType.Fruit && g.gridType == end.gridType)
+                            {
+                                g.SetEffect(end.effect);
+                                clearList.Add(g);
+                            }
                         }
-
-                        left--;
                     }
-
-                    while (right < _size)
+                }
+                else
+                {
+                    foreach (var g in _grid)
                     {
-                        temp = _grid[grid.y, right];
-                        if (temp != null && temp.blockType == GridScript.BlockType.Fruit && temp.gridType != 0)
+                        if (g != null)
                         {
-                            clearList.Add(temp);
+                            if (g.blockType == GridScript.BlockType.Fruit && g.gridType == end.gridType)
+                            {
+                                clearList.Add(g);
+                            }
                         }
-
-                        right++;
                     }
+                }
 
-                    Delete(clearList);
-
-                    break;
-                case EffectType.BombV:
-                    int up = grid.y - 1;
-                    int down = grid.y + 1;
-                    while (up >= 0)
-                    {
-                        temp = _grid[up, grid.x];
-                        if (temp != null && temp.blockType == GridScript.BlockType.Fruit && temp.gridType != 0)
-                        {
-                            clearList.Add(temp);
-                        }
-
-                        up--;
-                    }
-
-                    while (down < _size)
-                    {
-                        temp = _grid[down, grid.x];
-                        if (temp != null && temp.blockType == GridScript.BlockType.Fruit && temp.gridType != 0)
-                        {
-                            clearList.Add(temp);
-                        }
-
-                        down++;
-                    }
+                Delete(clearList);
+                break;
+            case EffectType.BombH:
+            case EffectType.BombV:
+                if (end.effect == EffectType.BombH || end.effect == EffectType.BombV)
+                {
+                    //都变成十字炸弹
+                    start.effect = EffectType.BombCross;
+                    end.effect = EffectType.BombCross;
+                    clearList.Add(start);
+                    clearList.Add(end);
 
                     Delete(clearList);
-                    break;
-            }
+                }
+                else
+                {
+                    DoMatchNormal(grids, callback);
+                    return;
+                }
+
+                break;
+            default:
+                DoMatchNormal(grids, callback);
+                return;
         }
 
         TimerUtils.Once(200, ReGenerate);
@@ -870,6 +868,15 @@ public class GridManager : Singleton<GridManager>
             int isLeft = new Random().Next() == 0 ? -1 : 1;
             int y = temp.y - 1;
             int x = temp.x;
+            if (x + isLeft > _size)
+            {
+                isLeft = -1;
+            }
+            else if (x + isLeft < 0)
+            {
+                isLeft = 1;
+            }
+
             while (y >= 0)
             {
                 temp = _grid[y, x];

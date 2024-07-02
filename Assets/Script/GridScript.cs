@@ -12,6 +12,7 @@ public enum EffectType
     None,
     BombH,
     BombV,
+    BombCross,
     BombRect,
     Clear,
     Bonus
@@ -116,6 +117,7 @@ public class GridScript : MonoBehaviour
         {
             var child = transform.GetChild(0).gameObject;
             ObjManager.Ins().Recycle(child.name, child);
+            effect = EffectType.None;
         }
     }
 
