@@ -1,12 +1,10 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using EventUtils;
 using GameObjectUtils;
 using Newtonsoft.Json;
 using PosTween;
 using Timer;
-using TMPro;
 using UnityEngine;
 using Random = System.Random;
 
@@ -22,10 +20,6 @@ public class GridManager : Singleton<GridManager>
 
     private List<string> _prefabs = new();
 
-    private List<string> _other = new();
-
-    // private Dictionary<string, bool> _blockDic = new Dictionary<string, bool>();
-
     private GameObject _gridPanel;
 
     private Vector2 _offset = new(1.28f, 1.28f);
@@ -34,7 +28,7 @@ public class GridManager : Singleton<GridManager>
 
     private bool _moving;
 
-    public void Init(int seed, int size)
+    public void Init(int seed, int size,Transform parent)
     {
         _size = size;
 
@@ -42,7 +36,9 @@ public class GridManager : Singleton<GridManager>
 
         _gridPanel = new GameObject();
         _gridPanel.name = "GridPanel";
-        _gridPanel.transform.position = new Vector3(-_size * _offset.x * 0.5f, _size * _offset.y * 0.5f, 0);
+        // _gridPanel.transform.localScale = new Vector3(0.95f, 0.95f, 0.95f);
+        _gridPanel.transform.parent = parent;
+        _gridPanel.transform.localPosition = new Vector3(-2.31f, 4.47f, 0);
 
         //添加基础水果
         _prefabs.Add("Prefabs/clear");
@@ -62,6 +58,7 @@ public class GridManager : Singleton<GridManager>
     /// </summary>
     public void CreatePanel()
     {
+        
         int[,] data;
 
         data = GenerateGrid();
@@ -148,6 +145,7 @@ public class GridManager : Singleton<GridManager>
 
             void Callback()
             {
+                GameManager.Ins().SetStep(GameManager.Ins().GetStep() - 1);
                 DoMatchSpecial(grids, () =>
                 {
                     _moving = true;
@@ -387,6 +385,8 @@ public class GridManager : Singleton<GridManager>
 
                 grid.OnRemove();
                 grid.UnRegister();
+                
+                GameManager.Ins().AddScore();
             }
         }
     }
@@ -587,6 +587,8 @@ public class GridManager : Singleton<GridManager>
         {
             //没有匹配的情况
             callback?.Invoke();
+            //通知更新主界面
+            EventManager.TriggerEvent("MainViewUpdate",null);
         }
         else
         {
@@ -918,7 +920,7 @@ public class GridManager : Singleton<GridManager>
             int isLeft = new Random().Next() == 0 ? -1 : 1;
             int y = temp.y - 1;
             int x = temp.x;
-            if (x + isLeft > _size)
+            if (x + isLeft >= _size)
             {
                 isLeft = -1;
             }
