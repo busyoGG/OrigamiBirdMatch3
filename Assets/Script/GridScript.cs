@@ -89,7 +89,9 @@ public class GridScript : MonoBehaviour
             EventManager.AddListening(id, "Ice_Break", arr =>
             {
                 GridScript removedOne = arr[0] as GridScript;
-                if (Math.Abs(x - removedOne.x) <= 1 && Math.Abs(y - removedOne.y) <= 1)
+                int checkX = Math.Abs(x - removedOne.x);
+                int checkY = Math.Abs(y - removedOne.y);
+                if (checkX == 1 && checkY == 0 || checkX == 0 && checkY == 1)
                 {
                     //在旁边爆炸
                     GridManager.Ins().Remove(this);

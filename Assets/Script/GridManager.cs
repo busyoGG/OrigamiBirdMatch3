@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using EventUtils;
 using GameObjectUtils;
+using Newtonsoft.Json;
 using PosTween;
 using Timer;
 using TMPro;
@@ -73,6 +74,20 @@ public class GridManager : Singleton<GridManager>
         FillGrid(data);
     }
 
+    public void CreatePanel(string json)
+    {
+        int[,] data = JsonConvert.DeserializeObject<int[,]>(json);
+
+        int[,] temp;
+
+        do
+        {
+            temp = GenerateGrid(data);
+        } while (CheckDelete(temp));
+
+        FillGrid(temp);
+    }
+
     /// <summary>
     /// 生成三消布局
     /// </summary>
@@ -85,7 +100,29 @@ public class GridManager : Singleton<GridManager>
             for (int j = 0; j < _size; j++)
             {
                 int gridType = GetRandomType();
-                grid[j, i] = gridType;
+                grid[i, j] = gridType;
+            }
+        }
+
+        return grid;
+    }
+
+    private int[,] GenerateGrid(int[,] data)
+    {
+        var grid = new int[_size, _size];
+        for (int i = 0; i < _size; i++)
+        {
+            for (int j = 0; j < _size; j++)
+            {
+                if (data[i, j] == -1)
+                {
+                    int gridType = GetRandomType();
+                    grid[i, j] = gridType;
+                }
+                else
+                {
+                    grid[i, j] = data[i, j];
+                }
             }
         }
 
@@ -266,6 +303,11 @@ public class GridManager : Singleton<GridManager>
         {
             for (int j = 0; j < _size - 2; j++)
             {
+                if (data[i, j] <= 1)
+                {
+                    continue;
+                }
+                
                 if (data[i, j] == data[i, j + 1] && data[i, j] == data[i, j + 2])
                 {
                     return true;
@@ -277,6 +319,11 @@ public class GridManager : Singleton<GridManager>
         {
             for (int j = 0; j < _size; j++)
             {
+                if (data[i, j] <= 1)
+                {
+                    continue;
+                }
+                
                 if (data[i, j] == data[i + 1, j] && data[i, j] == data[i + 2, j])
                 {
                     return true;
@@ -384,97 +431,100 @@ public class GridManager : Singleton<GridManager>
     {
         List<GridScript> res = new List<GridScript>();
 
-        List<GridScript> match = new List<GridScript>() { grid };
-
-        int x = grid.x + 1;
-        GridScript cur;
-        while (x < _size)
+        if (grid.blockType == GridScript.BlockType.Fruit)
         {
-            cur = _grid[grid.y, x];
+            List<GridScript> match = new List<GridScript>() { grid };
 
-            if (cur == null || cur.gridType != grid.gridType)
+            int x = grid.x + 1;
+            GridScript cur;
+            while (x < _size)
             {
-                break;
+                cur = _grid[grid.y, x];
+
+                if (cur == null || cur.gridType != grid.gridType)
+                {
+                    break;
+                }
+
+                if (cur != grid)
+                {
+                    match.Add(cur);
+                }
+
+                ++x;
             }
 
-            if (cur != grid)
+            x = grid.x - 1;
+            while (x >= 0)
             {
-                match.Add(cur);
+                cur = _grid[grid.y, x];
+
+                if (cur == null || cur.gridType != grid.gridType)
+                {
+                    break;
+                }
+
+                if (cur != grid)
+                {
+                    match.Add(cur);
+                }
+
+                --x;
             }
 
-            ++x;
-        }
-
-        x = grid.x - 1;
-        while (x >= 0)
-        {
-            cur = _grid[grid.y, x];
-
-            if (cur == null || cur.gridType != grid.gridType)
+            if (match.Count >= 3)
             {
-                break;
+                res.AddRange(match);
             }
 
-            if (cur != grid)
+            match.RemoveRange(1, match.Count - 1);
+
+            int y = grid.y + 1;
+
+            while (y < _size)
             {
-                match.Add(cur);
+                cur = _grid[y, grid.x];
+
+                if (cur == null || cur.gridType != grid.gridType)
+                {
+                    break;
+                }
+
+                if (cur != grid)
+                {
+                    match.Add(cur);
+                }
+
+                ++y;
             }
 
-            --x;
-        }
-
-        if (match.Count >= 3)
-        {
-            res.AddRange(match);
-        }
-
-        match.RemoveRange(1, match.Count - 1);
-
-        int y = grid.y + 1;
-
-        while (y < _size)
-        {
-            cur = _grid[y, grid.x];
-
-            if (cur == null || cur.gridType != grid.gridType)
+            y = grid.y - 1;
+            while (y >= 0)
             {
-                break;
+                cur = _grid[y, grid.x];
+
+                if (cur == null || cur.gridType != grid.gridType)
+                {
+                    break;
+                }
+
+                if (cur != grid)
+                {
+                    match.Add(cur);
+                }
+
+                --y;
             }
 
-            if (cur != grid)
+            if (match.Count >= 3)
             {
-                match.Add(cur);
+                if (res.Count > 0)
+                {
+                    match.RemoveAt(0);
+                }
+
+                res.AddRange(match);
             }
-
-            ++y;
-        }
-
-        y = grid.y - 1;
-        while (y >= 0)
-        {
-            cur = _grid[y, grid.x];
-
-            if (cur == null || cur.gridType != grid.gridType)
-            {
-                break;
-            }
-
-            if (cur != grid)
-            {
-                match.Add(cur);
-            }
-
-            --y;
-        }
-
-        if (match.Count >= 3)
-        {
-            if (res.Count > 0)
-            {
-                match.RemoveAt(0);
-            }
-
-            res.AddRange(match);
         }
 
         return res;

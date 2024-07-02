@@ -14,7 +14,10 @@ public class Launcher : MonoBehaviour
         ObjPoolManager.Ins().Init();
         PosTweenUtils.Init();
         GridManager.Ins().Init(666,8);
-        GridManager.Ins().CreatePanel();
+        // GridManager.Ins().CreatePanel();
+
+        string json = FileUtils.ReadFile(Application.dataPath + "/Resources/Json/test.json");
+        GridManager.Ins().CreatePanel(json);
     }
 
     // Update is called once per frame
