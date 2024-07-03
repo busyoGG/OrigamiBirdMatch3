@@ -1,57 +1,45 @@
-﻿using EventUtils;
+﻿using System.Collections;
+using EventUtils;
+using ReflectionUI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace Script
 {
-    public class MainView
+    public class MainView: BaseView
     {
-        private GameObject _mainView;
+        // private GameObject _mainView;
 
-        private TextMeshProUGUI _selfStep;
+        [UIDataBind(UIType.TextField, "1")]
+        private StringUIProp _selfStep { get; set; }
 
-        private TextMeshProUGUI _otherStep;
-
-        private TextMeshProUGUI _selfScore;
+        [UIDataBind(UIType.TextField, "2")]
+        private StringUIProp _otherStep{ get; set; }
         
-        private TextMeshProUGUI _otherScore;
+        [UIDataBind(UIType.TextField, "3")]
+        private StringUIProp _selfScore{ get; set; }
+        
+        [UIDataBind(UIType.TextField, "4")]
+        private StringUIProp _otherScore{ get; set; }
 
-        public MainView(GameObject mainView)
+        protected override void InitData()
         {
-            _mainView = mainView;
+            _selfStep.Set(GameManager.Ins().GetStep().ToString());
             
-            _selfStep = mainView.transform.GetChild(1).GetComponent<TextMeshProUGUI>();
-
-            _otherStep = mainView.transform.GetChild(2).GetComponent<TextMeshProUGUI>();
-
-            _selfScore = mainView.transform.GetChild(3).GetComponent<TextMeshProUGUI>();
-
-            _otherScore = mainView.transform.GetChild(4).GetComponent<TextMeshProUGUI>();
-
-            _selfStep.text = GameManager.Ins().GetStep().ToString();
+            _selfScore.Set(GameManager.Ins().GetScore().ToString());
             
-            _selfScore.text = GameManager.Ins().GetScore().ToString();
-
-            _otherStep.text = "0";
+            _otherStep.Set("0");
             
-            _otherScore.text = "0";
-            
-            Register();
+            _otherScore.Set("0");
         }
 
-        public void Update()
+        [UIListenerBind("MainViewUpdate")]
+        public void Update(ArrayList arr)
         {
-            _selfScore.text = GameManager.Ins().GetScore().ToString();
-            _selfStep.text = GameManager.Ins().GetStep().ToString();
-        }
-
-        public void Register()
-        {
-            EventManager.AddListening("MainView","MainViewUpdate", arr =>
-            {
-                Update();
-            });
+            _selfStep.Set(GameManager.Ins().GetStep().ToString());
+            
+            _selfScore.Set(GameManager.Ins().GetScore().ToString());
         }
     }
 }
