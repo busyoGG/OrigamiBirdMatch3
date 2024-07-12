@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using PoolUtils;
@@ -20,19 +21,24 @@ public class Launcher : MonoBehaviour
         
         GameManager.Ins().Init();
         
-        GridManager.Ins().Init(666, 7, bg);
+        int seed = DateTime.Now.Ticks.GetHashCode();
+        
+        GridManager.Ins().Init(seed, 7, bg);
         GridManager.Ins().CreatePanel();
+
+        // string json = FileUtils.ReadFile(Application.dataPath + "/Resources/Json/test.json");
+        // GridManager.Ins().CreatePanel(json);
 
         UITweenManager.Ins().Init();
         UIManager.Ins().Init();
         UIManager.Ins().ShowUI<MainView>("Resources/UI", "MainView");
-
-        // string json = FileUtils.ReadFile(Application.dataPath + "/Resources/Json/test.json");
-        // GridManager.Ins().CreatePanel(json);
     }
 
     // Update is called once per frame
     void Update()
     {
+#if UNITY_WEBGL
+        TimerUtils.Update();
+#endif
     }
 }

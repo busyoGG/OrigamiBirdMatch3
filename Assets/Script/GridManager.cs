@@ -28,7 +28,7 @@ public class GridManager : Singleton<GridManager>
 
     private bool _moving;
 
-    public void Init(int seed, int size,Transform parent)
+    public void Init(int seed, int size, Transform parent)
     {
         _size = size;
 
@@ -58,15 +58,12 @@ public class GridManager : Singleton<GridManager>
     /// </summary>
     public void CreatePanel()
     {
-        
         int[,] data;
-
-        data = GenerateGrid();
 
         do
         {
             data = GenerateGrid();
-        } while (CheckDelete(data));
+        } while (CheckDelete(data) || CheckNoMatch(data));
 
         FillGrid(data);
     }
@@ -75,14 +72,19 @@ public class GridManager : Singleton<GridManager>
     {
         int[,] data = JsonConvert.DeserializeObject<int[,]>(json);
 
+        CreatePanel(data);
+    }
+
+    public void CreatePanel(int[,] data, bool renew = true)
+    {
         int[,] temp;
 
         do
         {
-            temp = GenerateGrid(data);
-        } while (CheckDelete(temp));
+            temp = GenerateGrid(data, renew);
+        } while (CheckDelete(temp) || CheckNoMatch(temp));
 
-        FillGrid(temp);
+        FillGrid(temp, renew);
     }
 
     /// <summary>
@@ -104,7 +106,7 @@ public class GridManager : Singleton<GridManager>
         return grid;
     }
 
-    private int[,] GenerateGrid(int[,] data)
+    private int[,] GenerateGrid(int[,] data, bool needBlock = true)
     {
         var grid = new int[_size, _size];
         for (int i = 0; i < _size; i++)
@@ -113,7 +115,7 @@ public class GridManager : Singleton<GridManager>
             {
                 if (data[i, j] == -1)
                 {
-                    int gridType = GetRandomType();
+                    int gridType = GetRandomType(needBlock);
                     grid[i, j] = gridType;
                 }
                 else
@@ -153,6 +155,7 @@ public class GridManager : Singleton<GridManager>
                     {
                         _moving = false;
                         Release();
+                        DoCheckNoMatch();
                     });
                 });
             }
@@ -187,7 +190,7 @@ public class GridManager : Singleton<GridManager>
                 while (left >= 0)
                 {
                     temp = _grid[grid.y, left];
-                    if (temp != null && temp.blockType == GridScript.BlockType.Fruit && temp.gridType != 0)
+                    if (temp != null && temp.blockType == BlockType.Fruit && temp.gridType != 0)
                     {
                         clearList.Add(temp);
                     }
@@ -198,7 +201,7 @@ public class GridManager : Singleton<GridManager>
                 while (right < _size)
                 {
                     temp = _grid[grid.y, right];
-                    if (temp != null && temp.blockType == GridScript.BlockType.Fruit && temp.gridType != 0)
+                    if (temp != null && temp.blockType == BlockType.Fruit && temp.gridType != 0)
                     {
                         clearList.Add(temp);
                     }
@@ -215,7 +218,7 @@ public class GridManager : Singleton<GridManager>
                 while (up >= 0)
                 {
                     temp = _grid[up, grid.x];
-                    if (temp != null && temp.blockType == GridScript.BlockType.Fruit && temp.gridType != 0)
+                    if (temp != null && temp.blockType == BlockType.Fruit && temp.gridType != 0)
                     {
                         clearList.Add(temp);
                     }
@@ -226,7 +229,7 @@ public class GridManager : Singleton<GridManager>
                 while (down < _size)
                 {
                     temp = _grid[down, grid.x];
-                    if (temp != null && temp.blockType == GridScript.BlockType.Fruit && temp.gridType != 0)
+                    if (temp != null && temp.blockType == BlockType.Fruit && temp.gridType != 0)
                     {
                         clearList.Add(temp);
                     }
@@ -242,7 +245,7 @@ public class GridManager : Singleton<GridManager>
                 while (left >= 0)
                 {
                     temp = _grid[grid.y, left];
-                    if (temp != null && temp.blockType == GridScript.BlockType.Fruit && temp.gridType != 0)
+                    if (temp != null && temp.blockType == BlockType.Fruit && temp.gridType != 0)
                     {
                         clearList.Add(temp);
                     }
@@ -253,7 +256,7 @@ public class GridManager : Singleton<GridManager>
                 while (right < _size)
                 {
                     temp = _grid[grid.y, right];
-                    if (temp != null && temp.blockType == GridScript.BlockType.Fruit && temp.gridType != 0)
+                    if (temp != null && temp.blockType == BlockType.Fruit && temp.gridType != 0)
                     {
                         clearList.Add(temp);
                     }
@@ -266,7 +269,7 @@ public class GridManager : Singleton<GridManager>
                 while (up >= 0)
                 {
                     temp = _grid[up, grid.x];
-                    if (temp != null && temp.blockType == GridScript.BlockType.Fruit && temp.gridType != 0)
+                    if (temp != null && temp.blockType == BlockType.Fruit && temp.gridType != 0)
                     {
                         clearList.Add(temp);
                     }
@@ -277,7 +280,7 @@ public class GridManager : Singleton<GridManager>
                 while (down < _size)
                 {
                     temp = _grid[down, grid.x];
-                    if (temp != null && temp.blockType == GridScript.BlockType.Fruit && temp.gridType != 0)
+                    if (temp != null && temp.blockType == BlockType.Fruit && temp.gridType != 0)
                     {
                         clearList.Add(temp);
                     }
@@ -305,7 +308,7 @@ public class GridManager : Singleton<GridManager>
                 {
                     continue;
                 }
-                
+
                 if (data[i, j] == data[i, j + 1] && data[i, j] == data[i, j + 2])
                 {
                     return true;
@@ -321,7 +324,7 @@ public class GridManager : Singleton<GridManager>
                 {
                     continue;
                 }
-                
+
                 if (data[i, j] == data[i + 1, j] && data[i, j] == data[i + 2, j])
                 {
                     return true;
@@ -332,18 +335,112 @@ public class GridManager : Singleton<GridManager>
         return false;
     }
 
+    private bool CheckNoMatch(int[,] data)
+    {
+        for (int i = 0; i < _size - 1; i++)
+        {
+            for (int j = 0; j < _size - 1; j++)
+            {
+                bool res = true;
+
+                var start = data[i, j];
+
+                if (start == 1) continue;
+
+                //检测左右交换
+
+                (data[i, j], data[i, j + 1]) = (data[i, j + 1], data[i, j]);
+
+                res = CheckMatchAfter(data, i, j);
+                if (!res)
+                {
+                    res = CheckMatchAfter(data, i, j + 1);
+                }
+
+                (data[i, j], data[i, j + 1]) = (data[i, j + 1], data[i, j]);
+
+                if (res)
+                {
+                    return false;
+                }
+
+                //检测上下交换
+
+                (data[i, j], data[i + 1, j]) = (data[i + 1, j], data[i, j]);
+
+                res = CheckMatchAfter(data, i, j);
+                if (!res)
+                {
+                    res = CheckMatchAfter(data, i + 1, j);
+                }
+
+                (data[i, j], data[i + 1, j]) = (data[i + 1, j], data[i, j]);
+
+                if (res)
+                {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
     /// <summary>
     /// 检查是否完全不能消除
     /// </summary>
     /// <param name="size"></param>
     /// <param name="data"></param>
     /// <returns></returns>
-    private bool CheckNoPath(int[,] data)
+    private bool CheckNoMatch()
     {
-        for (int i = 0; i < _size; i++)
+        for (int i = 0; i < _size - 1; i++)
         {
-            for (int j = 0; j < _size - 2; j++)
+            for (int j = 0; j < _size - 1; j++)
             {
+                bool res = true;
+
+                var start = _grid[i, j];
+
+                if (start.blockType != BlockType.Fruit) continue;
+
+                //检测左右交换
+                var end = _grid[i, j + 1];
+
+                Swap(start, end);
+
+                res = CheckMatchAfter(start) || CheckMatchSpecial(start);
+
+                if (!res)
+                {
+                    res = CheckMatchAfter(end) || CheckMatchSpecial(end);
+                }
+
+                Swap(start, end);
+
+                if (res)
+                {
+                    return false;
+                }
+
+                //检测上下交换
+                end = _grid[i + 1, j];
+
+                Swap(start, end);
+
+                res = CheckMatchAfter(start) || CheckMatchSpecial(start);
+
+                if (!res)
+                {
+                    res = CheckMatchAfter(end) || CheckMatchSpecial(end);
+                }
+
+                Swap(start, end);
+
+                if (res)
+                {
+                    return false;
+                }
             }
         }
 
@@ -354,14 +451,21 @@ public class GridManager : Singleton<GridManager>
     /// 填充面板
     /// </summary>
     /// <param name="data"></param>
-    private void FillGrid(int[,] data)
+    private void FillGrid(int[,] data, bool renew = true)
     {
-        _grid = new GridScript[_size, _size];
+        if (renew)
+        {
+            _grid = new GridScript[_size, _size];
+        }
+
         for (int i = 0; i < _size; i++)
         {
             for (int j = 0; j < _size; j++)
             {
-                CreateGrid(data[i, j], i, j, new Vector3(_offset.x * j, -_offset.y * i, 0));
+                if (_grid[i, j] == null)
+                {
+                    CreateGrid(data[i, j], i, j, new Vector3(_offset.x * j, -_offset.y * i, 0));
+                }
             }
         }
     }
@@ -370,7 +474,7 @@ public class GridManager : Singleton<GridManager>
     /// 删除匹配项
     /// </summary>
     /// <param name="grids"></param>
-    private void Delete(List<GridScript> grids)
+    private void Delete(List<GridScript> grids, bool doAction = true)
     {
         //TODO 无法一次消除的情况
 
@@ -383,9 +487,9 @@ public class GridManager : Singleton<GridManager>
 
                 _grid[grid.y, grid.x] = null;
 
-                grid.OnRemove();
+                grid.OnRemove(doAction);
                 grid.UnRegister();
-                
+
                 GameManager.Ins().AddScore();
             }
         }
@@ -398,17 +502,7 @@ public class GridManager : Singleton<GridManager>
     /// <param name="end"></param>
     private void Swap(GridScript start, GridScript end, Action callback)
     {
-        _grid[start.y, start.x] = end;
-        _grid[end.y, end.x] = start;
-
-        int x = start.x;
-        int y = start.y;
-
-        start.x = end.x;
-        start.y = end.y;
-
-        end.x = x;
-        end.y = y;
+        Swap(start, end);
 
         start.SetFront();
 
@@ -423,6 +517,26 @@ public class GridManager : Singleton<GridManager>
     }
 
     /// <summary>
+    /// 无位移交换
+    /// </summary>
+    /// <param name="start"></param>
+    /// <param name="end"></param>
+    private void Swap(GridScript start, GridScript end)
+    {
+        _grid[start.y, start.x] = end;
+        _grid[end.y, end.x] = start;
+
+        int x = start.x;
+        int y = start.y;
+
+        start.x = end.x;
+        start.y = end.y;
+
+        end.x = x;
+        end.y = y;
+    }
+
+    /// <summary>
     /// 检查匹配
     /// </summary>
     /// <param name="grid"></param>
@@ -431,7 +545,7 @@ public class GridManager : Singleton<GridManager>
     {
         List<GridScript> res = new List<GridScript>();
 
-        if (grid.blockType == GridScript.BlockType.Fruit)
+        if (grid.blockType == BlockType.Fruit)
         {
             List<GridScript> match = new List<GridScript>() { grid };
 
@@ -530,8 +644,219 @@ public class GridManager : Singleton<GridManager>
         return res;
     }
 
+    private bool CheckMatchAfter(GridScript grid)
+    {
+        if (grid.blockType == BlockType.Fruit)
+        {
+            List<GridScript> match = new List<GridScript>() { grid };
+
+            int x = grid.x + 1;
+            GridScript cur;
+
+            while (x < _size)
+            {
+                cur = _grid[grid.y, x];
+
+                if (cur == null || cur.gridType != grid.gridType)
+                {
+                    break;
+                }
+
+                if (cur != grid)
+                {
+                    match.Add(cur);
+                }
+
+                ++x;
+            }
+
+            x = grid.x - 1;
+            while (x >= 0)
+            {
+                cur = _grid[grid.y, x];
+
+                if (cur == null || cur.gridType != grid.gridType)
+                {
+                    break;
+                }
+
+                if (cur != grid)
+                {
+                    match.Add(cur);
+                }
+
+                --x;
+            }
+
+            if (match.Count >= 3)
+            {
+                return true;
+            }
+
+            match.RemoveRange(1, match.Count - 1);
+
+            int y = grid.y + 1;
+
+            while (y < _size)
+            {
+                cur = _grid[y, grid.x];
+
+                if (cur == null || cur.gridType != grid.gridType)
+                {
+                    break;
+                }
+
+                if (cur != grid)
+                {
+                    match.Add(cur);
+                }
+
+                ++y;
+            }
+
+            y = grid.y - 1;
+            while (y >= 0)
+            {
+                cur = _grid[y, grid.x];
+
+                if (cur == null || cur.gridType != grid.gridType)
+                {
+                    break;
+                }
+
+                if (cur != grid)
+                {
+                    match.Add(cur);
+                }
+
+                --y;
+            }
+
+            if (match.Count >= 3)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private bool CheckMatchAfter(int[,] data, int indY, int indX)
+    {
+        int grid = data[indY, indX];
+
+        if (grid != 1)
+        {
+            List<int> match = new List<int> { grid };
+
+            int x = indX + 1;
+            int cur;
+            while (x < _size)
+            {
+                cur = data[indY, x];
+
+                if (cur != grid)
+                {
+                    break;
+                }
+
+                match.Add(cur);
+
+                ++x;
+            }
+
+            x = indX - 1;
+            while (x >= 0)
+            {
+                cur = data[indY, x];
+
+                if (cur != grid)
+                {
+                    break;
+                }
+
+                match.Add(cur);
+
+                --x;
+            }
+
+            if (match.Count >= 3)
+            {
+                return true;
+            }
+
+            match.RemoveRange(1, match.Count - 1);
+
+            int y = indY + 1;
+
+            while (y < _size)
+            {
+                cur = data[y, indX];
+
+                if (cur != grid)
+                {
+                    break;
+                }
+
+                match.Add(cur);
+
+                ++y;
+            }
+
+            y = indY - 1;
+            while (y >= 0)
+            {
+                cur = data[y, indX];
+
+                if (cur != grid)
+                {
+                    break;
+                }
+
+                match.Add(cur);
+
+                --y;
+            }
+
+            if (match.Count >= 3)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private bool CheckMatchSpecial(GridScript grid)
+    {
+        if (grid.blockType == BlockType.Fruit && grid.effect != EffectType.None)
+        {
+            if (grid.x + 1 < _size && _grid[grid.y, grid.x + 1].effect != EffectType.None)
+            {
+                return true;
+            }
+
+            if (grid.x - 1 >= 0 && _grid[grid.y, grid.x - 1].effect != EffectType.None)
+            {
+                return true;
+            }
+
+            if (grid.y + 1 < _size && _grid[grid.y + 1, grid.x].effect != EffectType.None)
+            {
+                return true;
+            }
+
+            if (grid.y - 1 >= 0 && _grid[grid.y - 1, grid.x].effect != EffectType.None)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /// <summary>
-    /// 开始匹配过程
+    /// 执行普通匹配
     /// </summary>
     /// <param name="grids"></param>
     private void DoMatchNormal(GridScript[] grids, Action callback = null)
@@ -588,7 +913,7 @@ public class GridManager : Singleton<GridManager>
             //没有匹配的情况
             callback?.Invoke();
             //通知更新主界面
-            EventManager.TriggerEvent("MainViewUpdate",null);
+            EventManager.TriggerEvent("MainViewUpdate", null);
         }
         else
         {
@@ -597,6 +922,11 @@ public class GridManager : Singleton<GridManager>
         }
     }
 
+    /// <summary>
+    /// 执行特别匹配
+    /// </summary>
+    /// <param name="grids"></param>
+    /// <param name="callback"></param>
     private void DoMatchSpecial(GridScript[] grids, Action callback = null)
     {
         var start = grids[0];
@@ -619,7 +949,7 @@ public class GridManager : Singleton<GridManager>
                     {
                         if (g != null)
                         {
-                            if (g.blockType == GridScript.BlockType.Fruit)
+                            if (g.blockType == BlockType.Fruit)
                             {
                                 clearList.Add(g);
                             }
@@ -635,7 +965,7 @@ public class GridManager : Singleton<GridManager>
                     {
                         if (g != null)
                         {
-                            if (g.blockType == GridScript.BlockType.Fruit && g.gridType == end.gridType)
+                            if (g.blockType == BlockType.Fruit && g.gridType == end.gridType)
                             {
                                 g.SetEffect(end.effect);
                                 clearList.Add(g);
@@ -649,7 +979,7 @@ public class GridManager : Singleton<GridManager>
                     {
                         if (g != null)
                         {
-                            if (g.blockType == GridScript.BlockType.Fruit && g.gridType == end.gridType)
+                            if (g.blockType == BlockType.Fruit && g.gridType == end.gridType)
                             {
                                 clearList.Add(g);
                             }
@@ -686,6 +1016,47 @@ public class GridManager : Singleton<GridManager>
         TimerUtils.Once(200, ReGenerate);
     }
 
+    private void DoCheckNoMatch()
+    {
+        //如果方块无法实现交换 重新生成
+        if (CheckNoMatch())
+        {
+            List<GridScript> clearList = new();
+            //清屏
+            foreach (var g in _grid)
+            {
+                if (g != null)
+                {
+                    if (g.blockType == BlockType.Fruit && g.gridType > 1)
+                    {
+                        clearList.Add(g);
+                    }
+                }
+            }
+
+            Delete(clearList, false);
+            // TimerUtils.Once(200, ReGenerate);
+            int[,] data = new int[_size, _size];
+
+            for (int i = 0; i < _size; i++)
+            {
+                for (int j = 0; j < _size; j++)
+                {
+                    if (_grid[i, j] != null)
+                    {
+                        data[i, j] = _grid[i, j].gridType;
+                    }
+                    else
+                    {
+                        data[i, j] = -1;
+                    }
+                }
+            }
+
+            CreatePanel(data, false);
+        }
+    }
+
     /// <summary>
     /// 获取grid
     /// </summary>
@@ -711,6 +1082,7 @@ public class GridManager : Singleton<GridManager>
         gs.y = i;
         gs.gridType = gridType;
         gs.pos = pos;
+        gs.blockType = CheckBlock(gridType);
 
         gs.Register();
 
@@ -722,6 +1094,9 @@ public class GridManager : Singleton<GridManager>
         return gs;
     }
 
+    /// <summary>
+    /// 重新生成方块
+    /// </summary>
     private void ReGenerate()
     {
         //先移动 后生成
@@ -764,7 +1139,7 @@ public class GridManager : Singleton<GridManager>
                     }
                     else
                     {
-                        if (temp.blockType == GridScript.BlockType.Fruit)
+                        if (temp.blockType == BlockType.Fruit)
                         {
                             _grid[temp.y, temp.x] = null;
 
@@ -844,10 +1219,18 @@ public class GridManager : Singleton<GridManager>
             {
                 _moving = false;
                 Release();
+                DoCheckNoMatch();
             });
         });
     }
 
+    /// <summary>
+    /// 顶部有不可移动的方块，按照对应的规则生成新的方块
+    /// </summary>
+    /// <param name="temp"></param>
+    /// <param name="lr"></param>
+    /// <param name="offsetY"></param>
+    /// <returns></returns>
     private GridScript GenerateForBlockedGrid(GridScript temp, int lr, int[] offsetY)
     {
         //检查左右
@@ -879,7 +1262,7 @@ public class GridManager : Singleton<GridManager>
                 while (left >= 0)
                 {
                     tempL = _grid[temp.y, left];
-                    if (tempL == null || tempL.blockType == GridScript.BlockType.Fruit)
+                    if (tempL == null || tempL.blockType == BlockType.Fruit)
                     {
                         break;
                     }
@@ -892,7 +1275,7 @@ public class GridManager : Singleton<GridManager>
                 while (right < _size)
                 {
                     tempR = _grid[temp.y, right];
-                    if (tempR == null || tempR.blockType == GridScript.BlockType.Fruit)
+                    if (tempR == null || tempR.blockType == BlockType.Fruit)
                     {
                         break;
                     }
@@ -971,5 +1354,20 @@ public class GridManager : Singleton<GridManager>
         }
 
         return _random.Next(2, _prefabs.Count);
+    }
+
+    /// <summary>
+    /// 检测是否不可移动
+    /// </summary>
+    /// <param name="type"></param>
+    /// <returns></returns>
+    private BlockType CheckBlock(int type)
+    {
+        if (type == 1)
+        {
+            return BlockType.Ice;
+        }
+
+        return BlockType.Fruit;
     }
 }

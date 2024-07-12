@@ -18,13 +18,14 @@ public enum EffectType
     Bonus
 }
 
+public enum BlockType
+{
+    Fruit,
+    Ice
+}
+
 public class GridScript : MonoBehaviour
 {
-    public enum BlockType
-    {
-        Fruit,
-        Ice
-    }
 
     public string id;
 
@@ -106,14 +107,17 @@ public class GridScript : MonoBehaviour
         TimerUtils.Once(100, () => { EventManager.RemoveAll(id); });
     }
 
-    public void OnRemove()
+    public void OnRemove(bool doAction = true)
     {
-        if (blockType == BlockType.Fruit)
+        if (doAction)
         {
-            EventManager.TriggerEvent("Ice_Break", new ArrayList() { this });
-        }
+            if (blockType == BlockType.Fruit)
+            {
+                EventManager.TriggerEvent("Ice_Break", new ArrayList() { this });
+            }
 
-        GridManager.Ins().DoEffect(this);
+            GridManager.Ins().DoEffect(this);
+        }
 
         if (transform.childCount > 0)
         {

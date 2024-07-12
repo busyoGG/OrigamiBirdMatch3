@@ -15,8 +15,14 @@ namespace Timer
         {
             _timeWheel = new TimeWheel();
             _isRunning = true;
+
+#if UNITY_WEBGL
+            Debug.Log("当前是WEBGL平台");
+#else
+            Debug.Log("当前不是WEBGL平台");
             _thread = new Thread(Update);
             _thread.Start();
+#endif
 
             GameObject obj = new GameObject();
             obj.name = "TimerUtils";
@@ -29,12 +35,16 @@ namespace Timer
             //_thread.Abort();
         }
 
-        private static void Update()
+        public static void Update()
         {
+#if UNITY_WEBGL
+            _timeWheel.Update();
+#else
             while (_isRunning)
             {
                 _timeWheel.Update();
             }
+#endif
         }
 
         /// <summary>
