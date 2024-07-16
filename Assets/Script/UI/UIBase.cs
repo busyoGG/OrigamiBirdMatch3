@@ -131,10 +131,10 @@ namespace ReflectionUI
 
             switch (uiBind._type)
             {
-                // case UIType.Comp:
-                //     GComponent comp = FGUIUtils.GetUI<GComponent>(main, uiBind._path);
-                //     prop.SetValue(this, comp);
-                //     break;
+                case UIType.Comp:
+                    UGUIData comp = UGUIUtils.GetUI<UGUIData>(main, uiBind._path);
+                    prop.SetValue(this, comp);
+                    break;
                 case UIType.TextField:
                     // GTextField textField = FGUIUtils.GetUI<GTextField>(main, uiBind._path);
                     UTextField uTextField = UGUIUtils.GetUI<UTextField>(main, uiBind._path);

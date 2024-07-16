@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using EventUtils;
 using GameObjectUtils;
+using ReflectionUI;
 using Timer;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -117,6 +118,8 @@ public class GridScript : MonoBehaviour
             }
 
             GridManager.Ins().DoEffect(this);
+            
+            SkillManager.Ins().AddCount(this);
         }
 
         if (transform.childCount > 0)

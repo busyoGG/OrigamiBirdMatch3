@@ -31,6 +31,7 @@ namespace ReflectionUI
             // 添加 CanvasScaler 组件（可选，根据需要）
             CanvasScaler canvasScaler = canvasObject.AddComponent<CanvasScaler>();
             canvasScaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize; // 根据屏幕大小缩放
+            canvasScaler.matchWidthOrHeight = 1f;
 
             // 添加 GraphicRaycaster 组件（可选，用于 UI 交互）
             canvasObject.AddComponent<GraphicRaycaster>();

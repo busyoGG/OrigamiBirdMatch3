@@ -4,6 +4,7 @@ using EventUtils;
 using GameObjectUtils;
 using Newtonsoft.Json;
 using PosTween;
+using ReflectionUI;
 using Timer;
 using UnityEngine;
 using Random = System.Random;
@@ -51,6 +52,21 @@ public class GridManager : Singleton<GridManager>
 
         //添加额外效果
         // _other.Add("Prefabs/ice");
+    }
+
+    public GridScript[,] GetGrids()
+    {
+        return _grid;
+    }
+
+    public int GetSize()
+    {
+        return _size;
+    }
+
+    public Random GetRandom()
+    {
+        return _random;
     }
 
     /// <summary>
@@ -175,6 +191,16 @@ public class GridManager : Singleton<GridManager>
     public void Remove(GridScript grid)
     {
         Delete(new List<GridScript>() { grid });
+    }
+
+    public void RemoveBySkill(List<GridScript> grids)
+    {
+        _moving = true;
+        TimerUtils.Once(200, () =>
+        {
+            Delete(grids);
+            TimerUtils.Once(200, ReGenerate);
+        });
     }
 
     public void DoEffect(GridScript grid)
@@ -914,6 +940,8 @@ public class GridManager : Singleton<GridManager>
             callback?.Invoke();
             //通知更新主界面
             EventManager.TriggerEvent("MainViewUpdate", null);
+            //计算技能
+            SkillManager.Ins().CheckSkill();
         }
         else
         {

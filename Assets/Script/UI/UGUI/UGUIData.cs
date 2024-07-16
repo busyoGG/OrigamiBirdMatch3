@@ -15,6 +15,11 @@ namespace ReflectionUI
 
         // public string id;
 
+        public int childCount
+        {
+            get => _obj.transform.childCount;
+        }
+
         public UGUIData parent
         {
             get => _parent == null ? _obj.transform.parent.GetComponent<UGUIData>() : _parent;
@@ -204,6 +209,13 @@ namespace ReflectionUI
         {
             AddChild(child);
             child._rect.SetSiblingIndex(index);
+        }
+
+        public UGUIData RemoveChildAt(int index)
+        {
+            var child = transform.GetChild(index);
+            child.SetParent(null);
+            return child.GetComponent<UGUIData>();
         }
 
         public void OnPointerClick(PointerEventData eventData)
