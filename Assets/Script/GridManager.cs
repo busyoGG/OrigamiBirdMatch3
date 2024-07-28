@@ -203,14 +203,18 @@ public class GridManager : Singleton<GridManager>,IGridManager
     {
         if (!_moving && _isMatched)
         {
-            GameManager.Ins().SetStep(GameManager.Ins().GetStep() - 1);
-            AIManager.Ins().DoOperation();
-            _isMatched = false;
-            
-            //通知更新主界面
-            EventManager.TriggerEvent("MainViewUpdate", null);
             //计算技能
-            SkillManager.Ins().CheckSkill("self");
+            bool res = SkillManager.Ins().CheckSkill("self");
+
+            if (!res)
+            {
+                GameManager.Ins().SetStep(GameManager.Ins().GetStep() - 1);
+                AIManager.Ins().DoOperation();
+                _isMatched = false;
+            
+                //通知更新主界面
+                EventManager.TriggerEvent("MainViewUpdate", null);
+            }
         }
     }
 

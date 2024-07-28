@@ -75,7 +75,7 @@ namespace ReflectionUI
             return 0;
         }
 
-        public void CheckSkill(string player)
+        public bool CheckSkill(string player)
         {
             int times = 0;
             switch (_skillType[player])
@@ -90,6 +90,13 @@ namespace ReflectionUI
                     DoSkillTrailblazer(times,player);
                     break;
             }
+
+            if (times > 0)
+            {
+                return true;
+            }
+
+            return false;
         }
 
         private void DoSkillTrailblazer(int times,string player)
@@ -130,7 +137,7 @@ namespace ReflectionUI
 
             if (listClear.Count > 0)
             {
-                Debug.Log("触发技能，次数" + times + " 剩余 ==> " + _skillCount);
+                Debug.Log(player + " 触发技能，次数" + times + " 剩余 ==> " + _skillCount);
                 _manager[player].RemoveBySkill(listClear);
             }
         }

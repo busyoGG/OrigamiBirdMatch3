@@ -4,6 +4,8 @@ using EventUtils;
 using GameObjectUtils;
 using ReflectionUI;
 using Timer;
+using UnityEngine;
+using Random = System.Random;
 
 public class AIManager : Singleton<AIManager>,IGridManager
 {
@@ -42,12 +44,10 @@ public class AIManager : Singleton<AIManager>,IGridManager
 
     public void DoOperation()
     {
-        if (_isDoing)
+        _stepCount++;
+        if (!_isDoing)
         {
-            _stepCount++;
-        }
-        else
-        {
+            _stepCount--;
             _isDoing = true;
             List<AiGridScript[]> picks = new();
             for (int i = 0; i < _size - 1; i++)
@@ -144,11 +144,8 @@ public class AIManager : Singleton<AIManager>,IGridManager
     
     public void RemoveBySkill(List<IGrid> grids)
     {
-        TimerUtils.Once(200, () =>
-        {
-            Delete(grids);
-            TimerUtils.Once(200, ReGenerate);
-        });
+        Delete(grids);
+        ReGenerate();
     }
     
     public void DoEffect(AiGridScript grid)
@@ -890,9 +887,9 @@ public class AIManager : Singleton<AIManager>,IGridManager
         }
         else
         {
-            TimerUtils.Once(200, ReGenerate);
             //匹配的情况 
             _isMatched = true;
+            ReGenerate();
         }
     }
     
@@ -900,18 +897,22 @@ public class AIManager : Singleton<AIManager>,IGridManager
     {
         if (_isMatched)
         {
-            GameManager.Ins().SetRivalStep(GameManager.Ins().GetRivalStep() - 1);
-            _isMatched = false;
-            _isDoing = false;
-            
-            //通知更新主界面
-            EventManager.TriggerEvent("MainViewUpdateRival", null);
             //计算技能
-            SkillManager.Ins().CheckSkill("rival");
+            bool res = SkillManager.Ins().CheckSkill("rival");
 
-            if (_stepCount > 0)
+            if (!res)
             {
-                DoOperation();
+                GameManager.Ins().SetRivalStep(GameManager.Ins().GetRivalStep() - 1);
+                _isMatched = false;
+                _isDoing = false;
+            
+                //通知更新主界面
+                EventManager.TriggerEvent("MainViewUpdateRival", null);
+
+                if (_stepCount > 0)
+                {
+                    DoOperation();
+                }
             }
         }
     }
@@ -924,8 +925,6 @@ public class AIManager : Singleton<AIManager>,IGridManager
         //先移动 后生成
 
         int[] offsetY = new int[_size];
-
-        int duration = 300;
 
         for (int i = _size - 1; i >= 0; i--)
         {
@@ -983,26 +982,28 @@ public class AIManager : Singleton<AIManager>,IGridManager
                             _grids[i, j] = temp;
                         }
                     }
+                    // Debug.Log("ai生成" + temp);
                 }
             }
         }
 
         //检测匹配
-        TimerUtils.Once(350, () =>
+        AiGridScript[] grids = new AiGridScript[_grids.Length];
+
+        int index = 0;
+        foreach (var grid in _grids)
         {
-            AiGridScript[] grids = new AiGridScript[_grids.Length];
-
-            int index = 0;
-            foreach (var grid in _grids)
+            if (grid == null)
             {
-                grids[index] = grid;
-                index++;
+                Debug.Log("ai生成的数据错误");
             }
+            grids[index] = grid;
+            index++;
+        }
 
-            DoMatchNormal(grids, () =>
-            {
-                DoCheckNoMatch();
-            });
+        DoMatchNormal(grids, () =>
+        {
+            DoCheckNoMatch();
         });
     }
 
@@ -1213,7 +1214,7 @@ public class AIManager : Singleton<AIManager>,IGridManager
                 return;
         }
 
-        TimerUtils.Once(200, ReGenerate);
+        ReGenerate();
     }
 
     private void DoCheckNoMatch()
