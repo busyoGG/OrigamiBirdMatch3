@@ -29,25 +29,25 @@ namespace Script
 
         protected override void InitData()
         {
-            _selfStep.Set(GameManager.Ins().GetStep().ToString());
+            _selfStep.Set(GameManager.Ins().GetStep());
 
-            _selfScore.Set(GameManager.Ins().GetScore().ToString());
-
-            _otherStep.Set("0");
-
-            _otherScore.Set("0");
+            _selfScore.Set(GameManager.Ins().GetScore());
+            
+            _otherScore.Set(GameManager.Ins().GetRivalScore());
+            
+            _otherStep.Set(GameManager.Ins().GetRivalStep());
         }
 
         [UIListenerBind("MainViewUpdate")]
         public void Update(ArrayList arr)
         {
-            _selfStep.Set(GameManager.Ins().GetStep().ToString());
+            _selfStep.Set(GameManager.Ins().GetStep());
 
-            _selfScore.Set(GameManager.Ins().GetScore().ToString());
+            _selfScore.Set(GameManager.Ins().GetScore());
 
-            int skillCount = SkillManager.Ins().GetCount();
+            int skillCount = SkillManager.Ins().GetCount("self");
 
-            int skillMax = SkillManager.Ins().GetMax();
+            int skillMax = SkillManager.Ins().GetMax("self");
 
             if (_skillPanel.childCount > skillCount)
             {
@@ -68,6 +68,14 @@ namespace Script
                     objUI.y = i * 20;
                 }
             }
+        }
+
+        [UIListenerBind("MainViewUpdateRival")]
+        public void UpdateRival(ArrayList arr)
+        {
+            _otherScore.Set(GameManager.Ins().GetRivalScore());
+            
+            _otherStep.Set(GameManager.Ins().GetRivalStep());
         }
     }
 }

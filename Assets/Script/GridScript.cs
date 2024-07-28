@@ -25,7 +25,7 @@ public enum BlockType
     Ice
 }
 
-public class GridScript : MonoBehaviour
+public class GridScript : MonoBehaviour,IGrid
 {
 
     public string id;
@@ -119,7 +119,7 @@ public class GridScript : MonoBehaviour
 
             GridManager.Ins().DoEffect(this);
             
-            SkillManager.Ins().AddCount(this);
+            SkillManager.Ins().AddCount(this,"self");
         }
 
         if (transform.childCount > 0)

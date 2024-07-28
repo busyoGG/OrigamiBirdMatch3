@@ -7,37 +7,66 @@ namespace ReflectionUI
 {
     public class SkillManager : Singleton<SkillManager>
     {
-        private int _skillCount;
+        private Dictionary<string, int> _skillCount = new();
 
         private enum SkillType
         {
             Trailblazer
         }
 
-        private SkillType _skillType;
+        private Dictionary<string, SkillType> _skillType = new();
 
-        public void AddCount(GridScript gs)
+        private Dictionary<string, IGridManager> _manager = new();
+
+        public void Init()
         {
-            switch (_skillType)
+            _skillType.Add("self", SkillType.Trailblazer);
+            _skillCount.Add("self",0);
+            _manager.Add("self",GridManager.Ins());
+            
+            _skillType.Add("rival", SkillType.Trailblazer);
+            _skillCount.Add("rival",0);
+            _manager.Add("rival",AIManager.Ins());
+        }
+
+        public void AddCount(GridScript gs, string player)
+        {
+
+            switch (_skillType[player])
             {
                 case SkillType.Trailblazer:
                     if (gs.gridType == 6)
                     {
-                        _skillCount++;
+                        _skillCount[player]++;
+                    }
+
+                    break;
+            }
+        }
+        
+        public void AddCount(AiGridScript gs, string player)
+        {
+
+            switch (_skillType[player])
+            {
+                case SkillType.Trailblazer:
+                    if (gs.gridType == 6)
+                    {
+                        _skillCount[player]++;
                     }
 
                     break;
             }
         }
 
-        public int GetCount()
+        public int GetCount(string player)
         {
-            return _skillCount;
+            return _skillCount.GetValueOrDefault(player, 0);
         }
 
-        public int GetMax()
+        public int GetMax(string player)
         {
-            switch (_skillType)
+            switch (_skillType[player])
             {
                 case SkillType.Trailblazer:
                     return 5;
@@ -46,30 +75,30 @@ namespace ReflectionUI
             return 0;
         }
 
-        public void CheckSkill()
+        public void CheckSkill(string player)
         {
             int times = 0;
-            switch (_skillType)
+            switch (_skillType[player])
             {
                 case SkillType.Trailblazer:
-                    while (_skillCount >= 5)
+                    while (_skillCount[player] >= 5)
                     {
                         times++;
-                        _skillCount -= 5;
+                        _skillCount[player] -= 5;
                     }
 
-                    DoSkillTrailblazer(times);
+                    DoSkillTrailblazer(times,player);
                     break;
             }
         }
 
-        private void DoSkillTrailblazer(int times)
+        private void DoSkillTrailblazer(int times,string player)
         {
-            var grids = GridManager.Ins().GetGrids();
-            int size = GridManager.Ins().GetSize();
-            Random random = GridManager.Ins().GetRandom();
+            List<List<IGrid>> grids = _manager[player].GetGrids();
+            int size = _manager[player].GetSize();
+            Random random = _manager[player].GetRandom();
 
-            List<GridScript> listClear = new();
+            List<IGrid> listClear = new();
 
             bool[,] pools = new bool[size, size];
 
@@ -86,10 +115,10 @@ namespace ReflectionUI
                     continue;
                 }
 
-                listClear.Add(grids[y, x]);
-                listClear.Add(grids[y, x + 1]);
-                listClear.Add(grids[y + 1, x]);
-                listClear.Add(grids[y + 1, x + 1]);
+                listClear.Add(grids[y][x]);
+                listClear.Add(grids[y][x + 1]);
+                listClear.Add(grids[y + 1][x]);
+                listClear.Add(grids[y + 1][x + 1]);
 
                 pools[y, x] = false;
                 pools[y, x + 1] = false;
@@ -101,8 +130,8 @@ namespace ReflectionUI
 
             if (listClear.Count > 0)
             {
-                Debug.Log("触发技能，剩余 ==> " + _skillCount);
-                GridManager.Ins().RemoveBySkill(listClear);
+                Debug.Log("触发技能，次数" + times + " 剩余 ==> " + _skillCount);
+                _manager[player].RemoveBySkill(listClear);
             }
         }
 

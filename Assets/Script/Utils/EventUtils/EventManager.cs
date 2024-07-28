@@ -37,7 +37,6 @@ namespace EventUtils
         /// <param name"Action">注册监听的函数</param>
         public static void AddListening(string id, string eventName, Action<ArrayList> action)
         {
-
             EventData eventData = null;
             if (!_eventDictionary.ContainsKey(eventName))
             {
@@ -57,13 +56,17 @@ namespace EventUtils
                 eventDic.Add(id, eventData);
             }
 
-            if (!_eventNode.ContainsKey(id) || !_eventNode[id].ContainsKey(eventName))
+            if (!_eventNode.ContainsKey(id))
             {
                 Dictionary<string, bool> dicNode = new Dictionary<string, bool>
                 {
                     { eventName, true }
                 };
                 _eventNode.Add(id, dicNode);
+            }
+            else if (!_eventNode[id].ContainsKey(eventName))
+            {
+                _eventNode[id][eventName] = true;
             }
 
             //触发粘性通知
@@ -174,7 +177,6 @@ namespace EventUtils
         {
             if (_eventDictionary.ContainsKey(eventName))
             {
-
                 Dictionary<string, EventData> eventDic = null;
 
                 _eventDictionary.TryGetValue(eventName, out eventDic);
@@ -200,7 +202,6 @@ namespace EventUtils
         {
             if (_eventDictionary.ContainsKey(eventName))
             {
-
                 Dictionary<string, EventData> eventDic = null;
 
                 _eventDictionary.TryGetValue(eventName, out eventDic);
@@ -239,7 +240,6 @@ namespace EventUtils
                     //    _stickyArrayFlag[eventName] = arrayFlag;
                     //}
                     res.Add(obj);
-
                 }
                 else
                 {

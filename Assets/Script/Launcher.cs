@@ -20,6 +20,7 @@ public class Launcher : MonoBehaviour
         PosTweenUtils.Init();
         
         GameManager.Ins().Init();
+        SkillManager.Ins().Init();
         
         int seed = DateTime.Now.Ticks.GetHashCode();
         
