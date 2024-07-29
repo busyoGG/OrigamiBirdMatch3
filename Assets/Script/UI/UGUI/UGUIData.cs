@@ -29,7 +29,11 @@ namespace ReflectionUI
         public bool visible
         {
             get => Math.Abs(_cGroup.alpha - 1) < float.Epsilon;
-            set => _cGroup.alpha = value ? 1 : 0;
+            set
+            {
+                _cGroup.alpha = value ? 1 : 0;
+                _cGroup.blocksRaycasts = value;
+            }
         }
 
         private UGUIData _parent;

@@ -6,7 +6,7 @@ namespace PosTween
     public class PosTweenUtils
     {
         private static TweenUpdater _updater;
-        
+
         public static void Init()
         {
             GameObject tween = new GameObject();
@@ -14,14 +14,20 @@ namespace PosTween
 
             _updater = tween.AddComponent<TweenUpdater>();
         }
-        
-        public static void Move(GridScript grid,Vector3 start, Vector3 end,int duration,int delay = 0,Action callback = null)
+
+        public static void Move(string id, GridScript grid, Vector3 start, Vector3 end, int duration, int delay = 0,
+            Action callback = null)
         {
             Vector3 diff = end - start;
 
-            TweenData tweenData = new TweenData(grid,duration,delay,start,diff,callback);
-            
-            _updater.Add(tweenData);
+            TweenData tweenData = new TweenData(grid, duration, delay, start, diff, callback);
+
+            _updater.Add(id, tweenData);
+        }
+
+        public static void ClearAll(string id)
+        {
+            _updater.ClearAll(id);
         }
     }
 }

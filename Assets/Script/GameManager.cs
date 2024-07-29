@@ -1,4 +1,6 @@
-﻿public class GameManager: Singleton<GameManager>
+﻿using UnityEngine;
+
+public class GameManager: Singleton<GameManager>
 {
     private int _score = 0;
 
@@ -12,6 +14,8 @@
 
     private int _rivalStep = 0;
 
+    private int _settlementCount = 0;
+
     public void Init()
     {
         _hp = 100;
@@ -19,6 +23,15 @@
         _step = 10;
         
         _rivalHp = 100;
+        _rivalScore = 0;
+        _rivalStep = 10;
+    }
+
+    public void Reset()
+    {
+        _score = 0;
+        _step = 10;
+        
         _rivalScore = 0;
         _rivalStep = 10;
     }
@@ -81,5 +94,34 @@
     public int GetRivalStep()
     {
         return _rivalStep;
+    }
+
+    public void Settlement()
+    {
+        _settlementCount++;
+        if (_settlementCount >= 2)
+        {
+            _settlementCount = 0;
+            int damage = _score - _rivalScore;
+            if (damage > 0)
+            {
+                _rivalHp -= damage;
+                if (_rivalHp < 0)
+                {
+                    _rivalHp = 0;
+                }
+            }
+            else
+            {
+                _hp += damage;
+                if (_hp < 0)
+                {
+                    _hp = 0;
+                }
+            }
+            Debug.Log("玩家血量 " + _hp + " - 敌方血量 " + _rivalHp);
+            
+            Reset();
+        }
     }
 }

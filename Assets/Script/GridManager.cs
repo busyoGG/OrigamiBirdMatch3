@@ -9,9 +9,11 @@ using Timer;
 using UnityEngine;
 using Random = System.Random;
 
-public class GridManager : Singleton<GridManager>,IGridManager
+public class GridManager : Singleton<GridManager>, IGridManager
 {
     private int _id;
+
+    private string _gridSelfId = "self";
 
     private GridScript[,] _grids;
 
@@ -56,13 +58,37 @@ public class GridManager : Singleton<GridManager>,IGridManager
         // _other.Add("Prefabs/ice");
     }
 
+    public void Clear()
+    {
+        //停止所有定时器和缓动
+        TimerUtils.ClearAll(_gridSelfId);
+        PosTweenUtils.ClearAll(_gridSelfId);
+        // PosTweenUtils
+        foreach (var grid in _grids)
+        {
+            if (grid != null)
+            {
+                int type = grid.gridType;
+                ObjManager.Ins().Recycle(_prefabs[type], grid.gameObject);
+
+                grid.OnRemove(false);
+                grid.UnRegister();
+            }
+        }
+
+        _grids = null;
+        _isMatched = false;
+        _moving = false;
+        _cur = null;
+    }
+
     public List<List<IGrid>> GetGrids()
     {
         List<List<IGrid>> res = new();
-        
+
         for (int i = 0; i < _size; i++)
         {
-            res.Add(new ());
+            res.Add(new());
             for (int j = 0; j < _size; j++)
             {
                 res[i].Add(_grids[i, j]);
@@ -174,7 +200,10 @@ public class GridManager : Singleton<GridManager>,IGridManager
 
     public void SetHover(GridScript gs)
     {
-        if (_cur != null && _cur != gs && !_moving && Math.Abs(_cur.x - gs.x) <= 1 && Math.Abs(_cur.y - gs.y) <= 1)
+        int step = GameManager.Ins().GetStep();
+
+        if (step > 0 && _cur != null && _cur != gs && !_moving && Math.Abs(_cur.x - gs.x) <= 1 &&
+            Math.Abs(_cur.y - gs.y) <= 1)
         {
             _moving = true;
 
@@ -192,7 +221,6 @@ public class GridManager : Singleton<GridManager>,IGridManager
                         DoCheckNoMatch();
                     });
                 });
-                
             }
 
             Swap(_cur, gs, Callback);
@@ -211,9 +239,15 @@ public class GridManager : Singleton<GridManager>,IGridManager
                 GameManager.Ins().SetStep(GameManager.Ins().GetStep() - 1);
                 AIManager.Ins().DoOperation();
                 _isMatched = false;
-            
+
                 //通知更新主界面
                 EventManager.TriggerEvent("MainViewUpdate", null);
+
+                int step = GameManager.Ins().GetStep();
+                if (step == 0)
+                {
+                    GameManager.Ins().Settlement();
+                }
             }
         }
     }
@@ -234,10 +268,10 @@ public class GridManager : Singleton<GridManager>,IGridManager
     public void RemoveBySkill(List<IGrid> grids)
     {
         _moving = true;
-        TimerUtils.Once(200, () =>
+        TimerUtils.Once(_gridSelfId, 200, () =>
         {
             Delete(grids);
-            TimerUtils.Once(200, ReGenerate);
+            TimerUtils.Once(_gridSelfId, 200, ReGenerate);
         });
     }
 
@@ -556,7 +590,7 @@ public class GridManager : Singleton<GridManager>,IGridManager
             }
         }
     }
-    
+
     /// <summary>
     /// 删除匹配项
     /// </summary>
@@ -566,7 +600,7 @@ public class GridManager : Singleton<GridManager>,IGridManager
         foreach (var data in grids)
         {
             GridScript grid = data as GridScript;
-            
+
             if (_grids[grid.y, grid.x] != null)
             {
                 int type = grid.gridType;
@@ -599,8 +633,8 @@ public class GridManager : Singleton<GridManager>,IGridManager
             callback?.Invoke();
         };
 
-        PosTweenUtils.Move(start, start.pos, end.pos, 300, 0, callback1);
-        PosTweenUtils.Move(end, end.pos, start.pos, 300);
+        PosTweenUtils.Move(_gridSelfId, start, start.pos, end.pos, 300, 0, callback1);
+        PosTweenUtils.Move(_gridSelfId, end, end.pos, start.pos, 300);
     }
 
     /// <summary>
@@ -1004,7 +1038,7 @@ public class GridManager : Singleton<GridManager>,IGridManager
         else
         {
             _isMatched = true;
-            TimerUtils.Once(200, ReGenerate);
+            TimerUtils.Once(_gridSelfId, 200, ReGenerate);
             //匹配的情况 
         }
     }
@@ -1101,7 +1135,7 @@ public class GridManager : Singleton<GridManager>,IGridManager
         }
 
         _isMatched = true;
-        TimerUtils.Once(200, ReGenerate);
+        TimerUtils.Once(_gridSelfId, 200, ReGenerate);
     }
 
     private void DoCheckNoMatch()
@@ -1222,7 +1256,7 @@ public class GridManager : Singleton<GridManager>,IGridManager
 
                         temp = CreateGrid(type, i, j, new Vector3(_offset.x * j, _offset.y * ++offsetY[j], 0));
 
-                        PosTweenUtils.Move(temp, temp.pos, new Vector3(temp.pos.x, -_offset.y * temp.y, 0),
+                        PosTweenUtils.Move(_gridSelfId, temp, temp.pos, new Vector3(temp.pos.x, -_offset.y * temp.y, 0),
                             duration);
                     }
                     else
@@ -1237,7 +1271,7 @@ public class GridManager : Singleton<GridManager>,IGridManager
 
                             _grids[i, j] = temp;
 
-                            PosTweenUtils.Move(temp, temp.pos, new Vector3(temp.pos.x, -_offset.y * temp.y, 0),
+                            PosTweenUtils.Move(_gridSelfId, temp, temp.pos, new Vector3(temp.pos.x, -_offset.y * temp.y, 0),
                                 duration);
                         }
                         else
@@ -1271,16 +1305,16 @@ public class GridManager : Singleton<GridManager>,IGridManager
                             int step2 = (int)(300 * (2 / dis));
                             int step3 = (int)(300 * ((dis - moveY - 2) / dis));
 
-                            PosTweenUtils.Move(temp, temp.pos,
+                            PosTweenUtils.Move(_gridSelfId, temp, temp.pos,
                                 new Vector3(temp.pos.x, temp.pos.y - _offset.y * moveY, 0),
                                 step1, 0, () =>
                                 {
-                                    PosTweenUtils.Move(temp, temp.pos,
+                                    PosTweenUtils.Move(_gridSelfId, temp, temp.pos,
                                         new Vector3(temp.pos.x - _offset.x * (moveX > 0 ? 1 : -1),
                                             temp.pos.y - _offset.y, 0),
                                         step2, 0, () =>
                                         {
-                                            PosTweenUtils.Move(temp, temp.pos,
+                                            PosTweenUtils.Move(_gridSelfId, temp, temp.pos,
                                                 new Vector3(_offset.x * temp.x, -_offset.y * temp.y, 0),
                                                 step3);
                                         });
@@ -1292,7 +1326,7 @@ public class GridManager : Singleton<GridManager>,IGridManager
         }
 
         //检测匹配
-        TimerUtils.Once(350, () =>
+        TimerUtils.Once(_gridSelfId, 350, () =>
         {
             GridScript[] grids = new GridScript[_grids.Length];
 

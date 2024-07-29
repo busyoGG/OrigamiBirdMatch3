@@ -29,6 +29,13 @@ namespace ReflectionUI
             _manager.Add("rival",AIManager.Ins());
         }
 
+        public void Clear()
+        {
+            _skillType.Clear();
+            _skillCount.Clear();
+            _manager.Clear();
+        }
+
         public void AddCount(GridScript gs, string player)
         {
 

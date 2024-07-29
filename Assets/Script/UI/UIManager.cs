@@ -39,7 +39,7 @@ namespace ReflectionUI
             // 设置 Canvas 的 RectTransform（例如设置大小和位置）
             RectTransform rectTransform = canvasObject.GetComponent<RectTransform>();
             rectTransform.sizeDelta = new Vector2(Screen.width, Screen.height); // 设置 Canvas 大小为屏幕大小
-            
+
             _canvasRoot = canvasObject.gameObject.AddComponent<UGUIData>();
 
             GameObject eventObj = new GameObject("EventSystem");
@@ -54,11 +54,28 @@ namespace ReflectionUI
         }
 
         /// <summary>
+        /// 展示已存在的UI
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public UINode ShowUI(string name)
+        {
+            if (_savedView.TryGetValue(name, out var node))
+            {
+                node.ui.Show();
+                return node;
+            }
+
+            Debug.Log("UI未创建");
+            return null;
+        }
+
+        /// <summary>
         /// 展示UI
         /// </summary>
         /// <param name="folder">UI所在文件夹</param>
         /// <param name="package">UI包名</param>
-        /// <param name="name">自定义名称</param>
+        /// <param name="name">界面名称</param>
         /// <param name="parent">父节点</param>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
@@ -80,7 +97,7 @@ namespace ReflectionUI
             view.name = name;
             if (uiPath.Contains("Resources"))
             {
-                view.main = ObjManager.Ins().GetRes(uiPath.Replace("Resources/","")).GetComponent<UGUIData>();
+                view.main = ObjManager.Ins().GetRes(uiPath.Replace("Resources/", "")).GetComponent<UGUIData>();
             }
 
             //创建UI节点

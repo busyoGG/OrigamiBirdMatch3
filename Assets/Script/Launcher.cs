@@ -18,21 +18,15 @@ public class Launcher : MonoBehaviour
         TimerUtils.Init();
         ObjPoolManager.Ins().Init();
         PosTweenUtils.Init();
-        
-        GameManager.Ins().Init();
-        SkillManager.Ins().Init();
-        
-        int seed = DateTime.Now.Ticks.GetHashCode();
-        
-        GridManager.Ins().Init(seed, 7, bg);
-        GridManager.Ins().CreatePanel();
-
-        // string json = FileUtils.ReadFile(Application.dataPath + "/Resources/Json/test.json");
-        // GridManager.Ins().CreatePanel(json);
 
         UITweenManager.Ins().Init();
         UIManager.Ins().Init();
-        UIManager.Ins().ShowUI<MainView>("Resources/UI", "MainView");
+        
+        int seed = DateTime.Now.Ticks.GetHashCode();
+        GridManager.Ins().Init(seed, 7, bg);
+
+        StartMenuView menu = UIManager.Ins().ShowUI<StartMenuView>("Resources/UI", "StartMenu").ui as StartMenuView;
+        menu.bg = bg;
     }
 
     // Update is called once per frame

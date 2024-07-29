@@ -46,7 +46,7 @@ public class AiGridScript: IGrid
     public void UnRegister()
     {
         //加延迟 防止foreach报错
-        TimerUtils.Once(100, () => { EventManager.RemoveAll(id); });
+        TimerUtils.Once("ai_grid",100, () => { EventManager.RemoveAll(id); });
     }
 
     public void OnRemove(bool doAction = true)

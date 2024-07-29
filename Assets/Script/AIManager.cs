@@ -41,6 +41,14 @@ public class AIManager : Singleton<AIManager>,IGridManager
             }
         }
     }
+    
+    public void Clear()
+    {
+        _grids = null;
+        _isDoing = false;
+        _stepCount = 0;
+        _isMatched = false;
+    }
 
     public void DoOperation()
     {
@@ -912,6 +920,12 @@ public class AIManager : Singleton<AIManager>,IGridManager
                 if (_stepCount > 0)
                 {
                     DoOperation();
+                }
+
+                int step = GameManager.Ins().GetRivalStep();
+                if (step == 0)
+                {
+                    GameManager.Ins().Settlement();
                 }
             }
         }

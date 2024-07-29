@@ -7,23 +7,46 @@ namespace PosTween
 {
     public class TweenUpdater: MonoBehaviour
     {
-        private List<TweenData> _actions = new List<TweenData>();
+        private Dictionary<string,List<TweenData>> _actions = new ();
 
-        public void Add(TweenData action)
+        private List<string> _keys = new();
+
+        public void Add(string id,TweenData action)
         {
-            _actions.Add(action);
+            if (!_actions.ContainsKey(id))
+            {
+                _actions.Add(id,new());
+            }
+            _actions[id].Add(action);
+        }
+
+        public void ClearAll(string id)
+        {
+            _actions.Remove(id);
         }
         
         private void Update()
         {
-            for (int i = _actions.Count - 1; i >= 0; i--)
+            _keys.Clear();
+            _keys.AddRange(_actions.Keys);
+
+            foreach (var key in _keys)
             {
-                var action = _actions[i];
-                action.DoAction();
-                if (action.CheckEnd())
+                var actions = _actions[key];
+                for (int i = actions.Count - 1; i >= 0; i--)
                 {
-                    action.DoCallback();
-                    _actions.RemoveAt(i);
+                    var action = actions[i];
+                    action.DoAction();
+                    if (action.CheckEnd())
+                    {
+                        action.DoCallback();
+                        actions.RemoveAt(i);
+                    }
+                }
+
+                if (actions.Count == 0)
+                {
+                    _actions.Remove(key);
                 }
             }
         }

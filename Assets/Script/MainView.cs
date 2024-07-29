@@ -4,6 +4,7 @@ using GameObjectUtils;
 using ReflectionUI;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace Script
@@ -11,6 +12,7 @@ namespace Script
     public class MainView : BaseView
     {
         // private GameObject _mainView;
+        public Transform bg;
 
         [UIDataBind(UIType.TextField, "1")]
         private StringUIProp _selfStep { get; set; }
@@ -27,7 +29,7 @@ namespace Script
         [UICompBind(UIType.Comp, "5")]
         private UGUIData _skillPanel { get; set; }
 
-        protected override void InitData()
+        protected override void OnShow()
         {
             _selfStep.Set(GameManager.Ins().GetStep());
 
@@ -76,6 +78,17 @@ namespace Script
             _otherScore.Set(GameManager.Ins().GetRivalScore());
             
             _otherStep.Set(GameManager.Ins().GetRivalStep());
+        }
+
+        [UIActionBind(UIAction.Click,"6")]
+        public void BackToMenu(PointerEventData data)
+        {
+            UIManager.Ins().HideUI(uiNode);
+            GridManager.Ins().Clear();
+            AIManager.Ins().Clear();
+            SkillManager.Ins().Clear();
+            bg.gameObject.SetActive(false);
+            UIManager.Ins().ShowUI("StartMenu");
         }
     }
 }
