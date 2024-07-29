@@ -90,5 +90,18 @@ namespace Script
             bg.gameObject.SetActive(false);
             UIManager.Ins().ShowUI("StartMenu");
         }
+
+        [UIListenerBind("CheckResult")]
+        public void CheckResult(ArrayList data)
+        {
+            UIManager.Ins().HideUI(uiNode);
+            GridManager.Ins().Clear();
+            AIManager.Ins().Clear();
+            SkillManager.Ins().Clear();
+            bg.gameObject.SetActive(false);
+            
+            ResultView res = UIManager.Ins().ShowUI<ResultView>("Resources/UI","Result").ui as ResultView;
+            res.win = (bool)data[0];
+        }
     }
 }

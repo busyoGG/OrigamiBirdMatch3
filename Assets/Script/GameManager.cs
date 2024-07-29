@@ -1,6 +1,7 @@
-﻿using UnityEngine;
+﻿using EventUtils;
+using UnityEngine;
 
-public class GameManager: Singleton<GameManager>
+public class GameManager : Singleton<GameManager>
 {
     private int _score = 0;
 
@@ -21,7 +22,7 @@ public class GameManager: Singleton<GameManager>
         _hp = 100;
         _score = 0;
         _step = 10;
-        
+
         _rivalHp = 100;
         _rivalScore = 0;
         _rivalStep = 10;
@@ -31,11 +32,11 @@ public class GameManager: Singleton<GameManager>
     {
         _score = 0;
         _step = 10;
-        
+
         _rivalScore = 0;
         _rivalStep = 10;
     }
-    
+
     public void AddScore()
     {
         _score++;
@@ -65,7 +66,7 @@ public class GameManager: Singleton<GameManager>
     {
         return _step;
     }
-    
+
     public void AddRivalScore()
     {
         _rivalScore++;
@@ -119,9 +120,19 @@ public class GameManager: Singleton<GameManager>
                     _hp = 0;
                 }
             }
+
             Debug.Log("玩家血量 " + _hp + " - 敌方血量 " + _rivalHp);
-            
+
             Reset();
+
+            if (_hp == 0)
+            {
+                EventManager.TriggerEvent("CheckResult", new() { false });
+            }
+            else if (_rivalHp == 0)
+            {
+                EventManager.TriggerEvent("CheckResult", new() { true });
+            }
         }
     }
 }
