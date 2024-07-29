@@ -124,6 +124,10 @@ public class GameManager : Singleton<GameManager>
             Debug.Log("玩家血量 " + _hp + " - 敌方血量 " + _rivalHp);
 
             Reset();
+            
+            //通知更新主界面
+            EventManager.TriggerEvent("MainViewUpdateRival", null);
+            EventManager.TriggerEvent("MainViewUpdate", null);
 
             if (_hp == 0)
             {

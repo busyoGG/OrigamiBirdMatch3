@@ -29,6 +29,12 @@ namespace Script
         [UICompBind(UIType.Comp, "5")]
         private UGUIData _skillPanel { get; set; }
 
+        [UIDataBind(UIType.TextField, "7")]
+        private StringUIProp _selfHp { get; set; }
+
+        [UIDataBind(UIType.TextField, "8")]
+        private StringUIProp _otherHp { get; set; }
+
         protected override void OnShow()
         {
             _selfStep.Set(GameManager.Ins().GetStep());
@@ -38,6 +44,10 @@ namespace Script
             _otherScore.Set(GameManager.Ins().GetRivalScore());
             
             _otherStep.Set(GameManager.Ins().GetRivalStep());
+            
+            _selfHp.Set(GameManager.Ins().GetHp());
+            
+            _otherHp.Set(GameManager.Ins().GetRivalHp());
         }
 
         [UIListenerBind("MainViewUpdate")]
@@ -46,6 +56,8 @@ namespace Script
             _selfStep.Set(GameManager.Ins().GetStep());
 
             _selfScore.Set(GameManager.Ins().GetScore());
+            
+            _selfHp.Set(GameManager.Ins().GetHp());
 
             int skillCount = SkillManager.Ins().GetCount("self");
 
@@ -78,6 +90,8 @@ namespace Script
             _otherScore.Set(GameManager.Ins().GetRivalScore());
             
             _otherStep.Set(GameManager.Ins().GetRivalStep());
+            
+            _otherHp.Set(GameManager.Ins().GetRivalHp());
         }
 
         [UIActionBind(UIAction.Click,"6")]

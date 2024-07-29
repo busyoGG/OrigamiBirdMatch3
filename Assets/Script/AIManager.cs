@@ -18,8 +18,6 @@ public class AIManager : Singleton<AIManager>,IGridManager
     private Random _random;
 
     private int _typeCount;
-    
-    private bool _isMatched = false;
 
     private int _stepCount = 0;
 
@@ -47,7 +45,6 @@ public class AIManager : Singleton<AIManager>,IGridManager
         _grids = null;
         _isDoing = false;
         _stepCount = 0;
-        _isMatched = false;
     }
 
     public void DoOperation()
@@ -896,37 +893,32 @@ public class AIManager : Singleton<AIManager>,IGridManager
         else
         {
             //匹配的情况 
-            _isMatched = true;
             ReGenerate();
         }
     }
     
     private void CheckStepEnd()
     {
-        if (_isMatched)
+        //计算技能
+        bool res = SkillManager.Ins().CheckSkill("rival");
+
+        if (!res)
         {
-            //计算技能
-            bool res = SkillManager.Ins().CheckSkill("rival");
+            GameManager.Ins().SetRivalStep(GameManager.Ins().GetRivalStep() - 1);
+            _isDoing = false;
 
-            if (!res)
+            if (_stepCount > 0)
             {
-                GameManager.Ins().SetRivalStep(GameManager.Ins().GetRivalStep() - 1);
-                _isMatched = false;
-                _isDoing = false;
+                DoOperation();
+            }
             
-                //通知更新主界面
-                EventManager.TriggerEvent("MainViewUpdateRival", null);
+            //通知更新主界面
+            EventManager.TriggerEvent("MainViewUpdateRival", null);
 
-                if (_stepCount > 0)
-                {
-                    DoOperation();
-                }
-
-                int step = GameManager.Ins().GetRivalStep();
-                if (step == 0)
-                {
-                    GameManager.Ins().Settlement();
-                }
+            int step = GameManager.Ins().GetRivalStep();
+            if (step == 0)
+            {
+                GameManager.Ins().Settlement();
             }
         }
     }
